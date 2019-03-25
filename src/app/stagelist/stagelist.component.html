@@ -1,0 +1,4 @@
+<input type="button" (click)="directoryChange()">
+<div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
+  <div class="example-box" *ngFor="let file of files" cdkDrag>{{file}}</div>
+</div>
