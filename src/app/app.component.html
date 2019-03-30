@@ -1,10 +1,14 @@
 <!--The content below is only a placeholder and can be replaced.-->
-<div style="text-align:center" class="container">
-  <div class="row">
-
-    <app-stagelist class="col-sm"></app-stagelist>
-    <app-stagelist class="col-sm"></app-stagelist>
-    <app-stagelist class="col-sm"></app-stagelist>
+<div style="text-align:center" class="container-fluid root">
+  <div class="row splitter">
+    <as-split [direction]="horizontal" class="splitter">
+      <as-split-area size="25">
+          <app-map-bar></app-map-bar>
+      </as-split-area>
+      <as-split-area size="75">
+          <div class="world-map">a</div>
+      </as-split-area>
+    </as-split>
   </div>
 
 </div>

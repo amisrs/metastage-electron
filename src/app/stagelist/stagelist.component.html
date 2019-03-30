@@ -1,4 +1,9 @@
-<input type="button" (click)="directoryChange()">
+<div class="container-fluid">
+  <div class="row">
+      <input class="col" type="button" (click)="directoryChange()" value="Load">
+      <input class="col" type="button" (click)="save()" value="Save">      
+  </div> 
+</div>
 <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
-  <div class="example-box" *ngFor="let file of files" cdkDrag>{{file}}</div>
+  <div class="example-box" *ngFor="let stage of viewList" (click)="_sendStageToMapPreview(stage)" cdkDrag>{{stage.filename}}</div>
 </div>

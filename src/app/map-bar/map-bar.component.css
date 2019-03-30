@@ -1,0 +1,25 @@
+.split, .gutter.gutter-horizontal {
+    float: left;
+}
+.gutter.gutter-horizontal {
+    cursor: ew-resize;
+}
+.stagelist-container {
+    height: 75%;
+    overflow-y: scroll;
+    margin: 0px;
+}
+
+.stagelist {
+    width: 100%;
+}
+
+.map-preview {
+    height: 25%;
+    margin: 0px;
+}
+.map-bar {
+    padding: 0px;
+    height: 100%;
+    width: 100%;
+}

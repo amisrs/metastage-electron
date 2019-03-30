@@ -12,12 +12,17 @@ import { StagelistComponent } from './stagelist/stagelist.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DragDropModule } from '@angular/cdk/drag-drop'; 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { AngularSplitModule } from 'angular-split';
+import { MapBarComponent } from './map-bar/map-bar.component';
+import { MapPreviewComponent } from './map-preview/map-preview.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     StagesComponent,
-    StagelistComponent
+    StagelistComponent,
+    MapBarComponent,
+    MapPreviewComponent,
   ],
   imports: [
     NgxElectronModule,
@@ -26,7 +31,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     AngularDraggableModule,
     BrowserAnimationsModule,
     DragDropModule,
-    NgbModule
+    NgbModule,
+    AngularSplitModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]
