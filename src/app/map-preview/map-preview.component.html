@@ -1,1 +1,3 @@
-<div *ngIf="clickedStage">{{clickedStage.filename}}</div>
+<div [ngStyle]="{ 'width': mapWidthPct, 'height': mapHeightPct }">
+    <canvas id="canvas" class="map-canvas" #mapCanvas></canvas>
+</div>

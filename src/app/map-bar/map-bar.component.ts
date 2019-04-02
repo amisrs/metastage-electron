@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, EventEmitter, Output, ChangeDetectionStrategy } from '@angular/core';
 import { StageModel } from '../StageModel';
 
 @Component({
@@ -7,7 +7,9 @@ import { StageModel } from '../StageModel';
   styleUrls: ['./map-bar.component.css'],
   host: {
     'class': 'app'
-},
+  }, 
+  changeDetection: ChangeDetectionStrategy.Default
+
 })
 export class MapBarComponent implements OnInit  {
 
@@ -17,7 +19,6 @@ export class MapBarComponent implements OnInit  {
 
   receiveStageFromStageList(data) {
     this.clickedStage = data;
-    
   }
 
   ngOnInit() {

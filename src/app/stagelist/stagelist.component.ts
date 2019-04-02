@@ -106,7 +106,6 @@ export class StagelistComponent {
       throw err;
     }
 
-    alert("i read metastage!");
     let indexLines: FileIndex[] = JSON.parse(data);
     indexLines.forEach(line => {
       this.metastageFileCount++;
