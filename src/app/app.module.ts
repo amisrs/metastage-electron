@@ -15,6 +15,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AngularSplitModule } from 'angular-split';
 import { MapBarComponent } from './map-bar/map-bar.component';
 import { MapPreviewComponent } from './map-preview/map-preview.component';
+import { WorldMapComponent } from './world-map/world-map.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +24,7 @@ import { MapPreviewComponent } from './map-preview/map-preview.component';
     StagelistComponent,
     MapBarComponent,
     MapPreviewComponent,
+    WorldMapComponent,
   ],
   imports: [
     NgxElectronModule,
