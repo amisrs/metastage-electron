@@ -1,4 +1,7 @@
-import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, Input } from '@angular/core';
+import { fromEvent } from "rxjs";
+import { Observable } from "rxjs";
+import { Subscription } from "rxjs";
 
 // https://stackoverflow.com/questions/47371623/html-infinite-pan-able-canvas
 @Component({
@@ -7,6 +10,14 @@ import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
   styleUrls: ['./world-map.component.css']
 })
 export class WorldMapComponent implements OnInit {
+
+  resizeObservable: Observable<Event>
+  resizeSubscription: Subscription
+
+  @Input()
+  divHeight: number;
+  @Input()
+  divWidth: number;
 
   mouseHeld: boolean;
   selectedBox: Stage;
@@ -33,7 +44,6 @@ export class WorldMapComponent implements OnInit {
     var yMin = 0;
     var yMax = 0;
     
-    this.ctx.fillStyle = "black";
     
     for (var i = 0; i < this.boxArray.length; ++i) {
       box = this.boxArray[i];
@@ -44,6 +54,7 @@ export class WorldMapComponent implements OnInit {
       yMax = box.y + box.height - this.panY;
       
       if (xMax > 0 && xMin < this.canvas.nativeElement.offsetWidth && yMax > 0 && yMin < this.canvas.nativeElement.offsetHeight) {
+        this.ctx.fillStyle = "black";
         box.draw(this.ctx, this.panX, this.panY);
       }
     }
@@ -55,6 +66,7 @@ export class WorldMapComponent implements OnInit {
     if (!this.selectedBox) {
       for (var i = this.boxArray.length - 1; i > -1; --i) {
         if (this.boxArray[i].isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
+          console.log("selecteed box");
           this.selectedBox = this.boxArray[i];
           this.selectedBox.isSelected = true;
           requestAnimationFrame(this.draw.bind(this));
@@ -75,6 +87,7 @@ export class WorldMapComponent implements OnInit {
         this.panX += this.oldMouseX - this.mouseX;
         this.panY += this.oldMouseY - this.mouseY;
       } else {
+        console.log("dragging box")
         this.selectedBox.x = this.mouseX - this.selectedBox.width * 0.5 + this.panX;
         this.selectedBox.y = this.mouseY - this.selectedBox.height * 0.5 + this.panY;
       }
@@ -98,9 +111,21 @@ export class WorldMapComponent implements OnInit {
   constructor() { }
 
   ngOnInit() {
-
+    this.resizeObservable = fromEvent(window, 'resize')
+    this.resizeSubscription = this.resizeObservable.subscribe(e => {
+      this.panX = 0;
+      this.panY = 0;
+      this.bounds = this.canvas.nativeElement.getBoundingClientRect();
+      this.ctx = this.canvas.nativeElement.getContext("2d");
+  
+      this.canvas.nativeElement.setAttribute('width', this.divWidth)
+      this.canvas.nativeElement.setAttribute('height', this.divHeight)
+    })
+  
     this.bounds = this.canvas.nativeElement.getBoundingClientRect();
     this.ctx = this.canvas.nativeElement.getContext("2d");
+    this.canvas.nativeElement.setAttribute('width', this.divWidth)
+    this.canvas.nativeElement.setAttribute('height', this.divHeight)
 
     this.boxArray.push(new Stage(0, 0, 200, 200))
     requestAnimationFrame(this.draw.bind(this));

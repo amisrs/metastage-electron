@@ -1,6 +1,6 @@
 <!--The content below is only a placeholder and can be replaced.-->
 <div style="text-align:center" class="container-fluid root">
-  <div class="row splitter">
+  <div class="d-flex flex-row">
     <!-- <as-split [direction]="horizontal" class="splitter">
       <as-split-area size="25">
           <app-map-bar></app-map-bar>
@@ -9,11 +9,11 @@
           <app-world-map class="world-map"></app-world-map>
       </as-split-area>
     </as-split> -->
-    <div class="col-2">
+    <div class="w-25">
           <app-map-bar></app-map-bar>
     </div>
-    <div class="flex-fill">
-        <app-world-map class="world-map"></app-world-map>
+    <div class="hide-overflow flex-fill"#mapDiv>
+        <app-world-map [divHeight]="divHeight" [divWidth]="divWidth" class="world-map"></app-world-map>
     </div>
   </div>
 
