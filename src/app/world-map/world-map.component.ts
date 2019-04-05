@@ -14,10 +14,14 @@ export class WorldMapComponent implements OnInit {
   resizeObservable: Observable<Event>
   resizeSubscription: Subscription
 
-  @Input()
-  divHeight: number;
-  @Input()
-  divWidth: number;
+  @Input() divElement: ElementRef;
+
+  @Input() divHeight: number;
+  @Input() divWidth: number;
+  
+
+  @Input() topPosition: number;
+  @Input() leftPosition: number;
 
   mouseHeld: boolean;
   selectedBox: Stage;
@@ -28,23 +32,39 @@ export class WorldMapComponent implements OnInit {
   mouseY: number;
   oldMouseX: number;
   oldMouseY: number;
+  
+  gridWidth: number = 50;
 
   ctx: CanvasRenderingContext2D;
   boxArray: Stage[] = [];
   @ViewChild("map") canvas: ElementRef;
   bounds: ClientRect;
 
+  @ViewChild("grid") gridCanvas: ElementRef;
+  gridCtx: CanvasRenderingContext2D;
+
   draw = () => {
-    this.ctx.fillStyle = "gray";
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.0)";
+    this.gridCtx.fillStyle = "gray";
     this.ctx.fillRect(0,0, this.canvas.nativeElement.offsetWidth, this.canvas.nativeElement.offsetHeight);
-    
+    this.gridCtx.fillRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
+    this.canvas.nativeElement.setAttribute('width', this.divWidth)
+    this.canvas.nativeElement.setAttribute('height', this.divHeight)
+    this.gridCanvas.nativeElement.setAttribute('width', this.divWidth)
+    this.gridCanvas.nativeElement.setAttribute('height', this.divHeight)
+
     var box = null;
     var xMin = 0;
     var xMax = 0;
     var yMin = 0;
     var yMax = 0;
     
-    
+    for(var w = 0; w < this.gridCanvas.nativeElement.offsetWidth; w += this.gridWidth) {
+      this.gridCtx.moveTo(w - this.panX, 0 - this.panY);
+      this.gridCtx.lineTo(w - this.panX, this.gridCanvas.nativeElement.offsetHeight - this.panY);
+      this.gridCtx.stroke();
+    }
+
     for (var i = 0; i < this.boxArray.length; ++i) {
       box = this.boxArray[i];
       
@@ -77,7 +97,6 @@ export class WorldMapComponent implements OnInit {
   }
 
   onMouseMove(e: MouseEvent) {
-    console.log("mousemove");
     this.mouseX = e.clientX - this.bounds.left;
     this.mouseY = e.clientY - this.bounds.top;
 
@@ -113,17 +132,26 @@ export class WorldMapComponent implements OnInit {
   ngOnInit() {
     this.resizeObservable = fromEvent(window, 'resize')
     this.resizeSubscription = this.resizeObservable.subscribe(e => {
+      // this.divWidth = this.divElement.nativeElement.offsetWidth;
+      // this.divHeight = this.divElement.nativeElement.offsetHeight;
+      // this.topPosition = this.divElement.nativeElement.getBoundingClientRect().top;
+      // this.leftPosition = this.divElement.nativeElement.getBoundingClientRect().left;
+
       this.panX = 0;
       this.panY = 0;
       this.bounds = this.canvas.nativeElement.getBoundingClientRect();
       this.ctx = this.canvas.nativeElement.getContext("2d");
+      this.gridCtx = this.gridCanvas.nativeElement.getContext("2d");
   
       this.canvas.nativeElement.setAttribute('width', this.divWidth)
       this.canvas.nativeElement.setAttribute('height', this.divHeight)
+      this.gridCanvas.nativeElement.setAttribute('width', this.divWidth)
+      this.gridCanvas.nativeElement.setAttribute('height', this.divHeight)
     })
   
     this.bounds = this.canvas.nativeElement.getBoundingClientRect();
     this.ctx = this.canvas.nativeElement.getContext("2d");
+    this.gridCtx = this.gridCanvas.nativeElement.getContext("2d");
     this.canvas.nativeElement.setAttribute('width', this.divWidth)
     this.canvas.nativeElement.setAttribute('height', this.divHeight)
 

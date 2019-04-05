@@ -1,1 +1,6 @@
-<canvas id="canvas" class="map" (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp($event)" #map></canvas>
+<div>
+    <canvas id="canvas" class="map" (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp($event)" 
+    id='map' [ngStyle]="{ 'top': topPosition, 'left': leftPosition, 'z-index': 1 }"#map></canvas>
+    <canvas id="canvas" class="map" 
+    id='grid'[ngStyle]="{ 'top': topPosition, 'left': leftPosition }" #grid></canvas>
+</div>

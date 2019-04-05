@@ -19,6 +19,8 @@ export class AppComponent implements OnInit {
   @ViewChild("mapDiv") mapDiv: ElementRef;
   divHeight: number;
   divWidth: number;
+  
+  divElement: ElementRef;
 
   ngOnInit() {
     this.resizeObservable = fromEvent(window, 'resize')
@@ -26,7 +28,7 @@ export class AppComponent implements OnInit {
       console.log("resize");
       this.divHeight = this.mapDiv.nativeElement.offsetHeight;
       this.divWidth = this.mapDiv.nativeElement.offsetWidth;
-
+      this.divElement = this.mapDiv;
     })
   }
 
