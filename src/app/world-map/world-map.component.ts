@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, Input } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, Input, HostListener } from '@angular/core';
 import { fromEvent } from "rxjs";
 import { Observable } from "rxjs";
 import { Subscription } from "rxjs";
@@ -11,8 +11,8 @@ import { Subscription } from "rxjs";
 })
 export class WorldMapComponent implements OnInit {
 
-  resizeObservable: Observable<Event>
-  resizeSubscription: Subscription
+  // resizeObservable: Observable<Event>
+  // resizeSubscription: Subscription
 
   @Input() divElement: ElementRef;
 
@@ -25,6 +25,11 @@ export class WorldMapComponent implements OnInit {
 
   mouseHeld: boolean;
   selectedBox: Stage;
+
+  // where did you click the box in relation to its center
+  selectOffsetX: number;
+  selectOffsetY: number;
+
   panX: number = 0;
   panY: number = 0;
 
@@ -33,7 +38,7 @@ export class WorldMapComponent implements OnInit {
   oldMouseX: number;
   oldMouseY: number;
   
-  gridWidth: number = 50;
+  gridSize: number = 10;
 
   ctx: CanvasRenderingContext2D;
   boxArray: Stage[] = [];
@@ -48,31 +53,49 @@ export class WorldMapComponent implements OnInit {
     this.gridCtx.fillStyle = "gray";
     this.ctx.fillRect(0,0, this.canvas.nativeElement.offsetWidth, this.canvas.nativeElement.offsetHeight);
     this.gridCtx.fillRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
-    this.canvas.nativeElement.setAttribute('width', this.divWidth)
-    this.canvas.nativeElement.setAttribute('height', this.divHeight)
-    this.gridCanvas.nativeElement.setAttribute('width', this.divWidth)
-    this.gridCanvas.nativeElement.setAttribute('height', this.divHeight)
+    this.canvas.nativeElement.setAttribute('width', this.divWidth);
+    this.canvas.nativeElement.setAttribute('height', this.divHeight);
+    this.gridCanvas.nativeElement.setAttribute('width', this.divWidth);
+    this.gridCanvas.nativeElement.setAttribute('height', this.divHeight);
+
+
+    let mapStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 1;`;
+    let gridStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 0;`;
+    this.gridCanvas.nativeElement.setAttribute('style', gridStyle);
+    this.canvas.nativeElement.setAttribute('style', mapStyle);
+
 
     var box = null;
     var xMin = 0;
     var xMax = 0;
     var yMin = 0;
     var yMax = 0;
-    
-    for(var w = 0; w < this.gridCanvas.nativeElement.offsetWidth; w += this.gridWidth) {
+
+    for(var w = 0; w < this.gridCanvas.nativeElement.offsetWidth; w += this.gridSize) {
+      this.gridCtx.beginPath();
+      this.gridCtx.lineWidth = 0.5;
       this.gridCtx.moveTo(w - this.panX, 0 - this.panY);
       this.gridCtx.lineTo(w - this.panX, this.gridCanvas.nativeElement.offsetHeight - this.panY);
+      this.gridCtx.stroke();
+    }
+
+    for(var h = 0; h < this.gridCanvas.nativeElement.offsetHeight; h += this.gridSize) {
+      this.gridCtx.beginPath();
+      this.gridCtx.lineWidth = 0.5;
+      this.gridCtx.moveTo(0 - this.panX, h - this.panY);
+      this.gridCtx.lineTo(this.gridCanvas.nativeElement.offsetWidth - this.panX, h - this.panY);
       this.gridCtx.stroke();
     }
 
     for (var i = 0; i < this.boxArray.length; ++i) {
       box = this.boxArray[i];
       
+      
       xMin = box.x - this.panX;
       xMax = box.x + box.width - this.panX;
       yMin = box.y - this.panY;
       yMax = box.y + box.height - this.panY;
-      
+      // if box is within vision, draw it
       if (xMax > 0 && xMin < this.canvas.nativeElement.offsetWidth && yMax > 0 && yMin < this.canvas.nativeElement.offsetHeight) {
         this.ctx.fillStyle = "black";
         box.draw(this.ctx, this.panX, this.panY);
@@ -82,13 +105,14 @@ export class WorldMapComponent implements OnInit {
 
   onMouseDown(e: MouseEvent) {
     this.mouseHeld = true;
-    
+    console.log(`Click point: (${this.mouseX + this.panX}, ${this.mouseY + this.panY})`);
     if (!this.selectedBox) {
       for (var i = this.boxArray.length - 1; i > -1; --i) {
         if (this.boxArray[i].isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
-          console.log("selecteed box");
           this.selectedBox = this.boxArray[i];
           this.selectedBox.isSelected = true;
+          this.selectOffsetX = this.mouseX - this.selectedBox.x;
+          this.selectOffsetY = this.mouseY - this.selectedBox.y;
           requestAnimationFrame(this.draw.bind(this));
           return;
         }
@@ -106,9 +130,8 @@ export class WorldMapComponent implements OnInit {
         this.panX += this.oldMouseX - this.mouseX;
         this.panY += this.oldMouseY - this.mouseY;
       } else {
-        console.log("dragging box")
-        this.selectedBox.x = this.mouseX - this.selectedBox.width * 0.5 + this.panX;
-        this.selectedBox.y = this.mouseY - this.selectedBox.height * 0.5 + this.panY;
+        this.selectedBox.x = this.roundToNearest(this.mouseX - this.selectOffsetX + this.panX, this.gridSize);
+        this.selectedBox.y = this.roundToNearest(this.mouseY - this.selectOffsetY + this.panY, this.gridSize);
       }
     }
     
@@ -129,37 +152,62 @@ export class WorldMapComponent implements OnInit {
 
   constructor() { }
 
-  ngOnInit() {
-    this.resizeObservable = fromEvent(window, 'resize')
-    this.resizeSubscription = this.resizeObservable.subscribe(e => {
-      // this.divWidth = this.divElement.nativeElement.offsetWidth;
-      // this.divHeight = this.divElement.nativeElement.offsetHeight;
-      // this.topPosition = this.divElement.nativeElement.getBoundingClientRect().top;
-      // this.leftPosition = this.divElement.nativeElement.getBoundingClientRect().left;
+  prepareCanvas() {
+    this.canvas.nativeElement.setAttribute('width', this.divWidth)
+    this.canvas.nativeElement.setAttribute('height', this.divHeight)
+    this.gridCanvas.nativeElement.setAttribute('width', this.divWidth)
+    this.gridCanvas.nativeElement.setAttribute('height', this.divHeight)
 
-      this.panX = 0;
-      this.panY = 0;
-      this.bounds = this.canvas.nativeElement.getBoundingClientRect();
-      this.ctx = this.canvas.nativeElement.getContext("2d");
-      this.gridCtx = this.gridCanvas.nativeElement.getContext("2d");
-  
-      this.canvas.nativeElement.setAttribute('width', this.divWidth)
-      this.canvas.nativeElement.setAttribute('height', this.divHeight)
-      this.gridCanvas.nativeElement.setAttribute('width', this.divWidth)
-      this.gridCanvas.nativeElement.setAttribute('height', this.divHeight)
-    })
-  
+    let mapStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 1;`;
+    let gridStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 0;`;
+
+    this.gridCanvas.nativeElement.setAttribute('style', gridStyle);
+    this.canvas.nativeElement.setAttribute('style', mapStyle);
+
     this.bounds = this.canvas.nativeElement.getBoundingClientRect();
     this.ctx = this.canvas.nativeElement.getContext("2d");
     this.gridCtx = this.gridCanvas.nativeElement.getContext("2d");
-    this.canvas.nativeElement.setAttribute('width', this.divWidth)
-    this.canvas.nativeElement.setAttribute('height', this.divHeight)
+
+    this.ctx.fillStyle = "rgba(255, 255, 255, 0.0)";
+    this.gridCtx.fillStyle = "gray";
+    this.ctx.fillRect(0,0, this.canvas.nativeElement.offsetWidth, this.canvas.nativeElement.offsetHeight);
+    this.gridCtx.fillRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
+
+    this.draw();
+  }
+
+  ngOnInit() {
+    this.prepareCanvas();
 
     this.boxArray.push(new Stage(0, 0, 200, 200))
     requestAnimationFrame(this.draw.bind(this));
   }
   
-  
+  @HostListener('window:resize', ['$event'])
+  onResize(event: Event) {
+    this.panX = 0;
+    this.panY = 0;
+    this.prepareCanvas();
+
+  }
+
+  roundToNearest(value: number, nearest: number) {
+    // case 1: (value % nearest = 0)
+    //    value is already at a multiple
+    // case 2: (value % nearest < nearest / 2)
+    //    value should be rounded down to (value - (value % nearest))
+    //    e.g. roundToNearest(12, 5) = (12 - (12 % 5)) = 10
+    // case 3: (value % nearest > nearest / 2)
+    //    value should be rounded up to (value + (nearest - (value % nearest))
+    
+    if(value % nearest == 0) {
+      return value;
+    } else if(value % nearest < nearest / 2) {
+      return value - (value % nearest);
+    } else {
+      return value + (nearest - (value % nearest));
+    }
+  }
 
 }
 
@@ -178,7 +226,8 @@ class Stage {
   }
 
   isCollidingWithPoint(x: number, y: number) {
-    return (x > this.x && x < this.x + this.width) && (y > this.y && y < this.y + this.height);
+    return (x > this.x && x < this.x + this.width) 
+        && (y > this.y && y < this.y + this.height);
   }
 
   drag(newX: number, newY: number) {
@@ -204,6 +253,14 @@ class Stage {
         this.height
       );
     }
+
+    ctx.fillStyle = "white";
+    ctx.fillText(
+      `(${this.x}, ${this.y})`,
+      this.x + this.width * 0.5 - panX,
+      this.y + this.height * 0.5 - panY,
+      this.width
+    );
     
     ctx.fillStyle = "black";
   }
