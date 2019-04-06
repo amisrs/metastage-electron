@@ -5,5 +5,7 @@
   </div> 
 </div>
 <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
-  <div class="example-box" *ngFor="let stage of viewList" (click)="_sendStageToMapPreview(stage)" cdkDrag>{{stage.filename}}</div>
+  <div class="example-box" *ngFor="let stage of viewList" (click)="_sendStageToMapPreview(stage)" [ngClass]="stage.changeFlag == 'new' ? 'new' : 'old'" cdkDrag>
+    {{stage.filename}}
+  </div>
 </div>

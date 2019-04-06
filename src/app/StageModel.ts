@@ -9,7 +9,7 @@ export interface StageModel {
     // TODO: Tileset
     filename: string;
     // raw: string; // raw json, probably won't need
-    changeFlag: string; // when file exists in directory but not in metastage, vice versa
+    changeFlag: string; // VALUES: new, deleted
 }
 
 // One stage model can have many layers (e.g. collision layer, object layer)

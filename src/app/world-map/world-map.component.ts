@@ -217,12 +217,18 @@ class Stage {
   width: number;
   height: number;
   isSelected: boolean;
+
+  name: string;
  
-  constructor(x: number, y: number, width: number, height: number) {
+  constructor(x: number, y: number, width: number, height: number, name?: string) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
+    
+    if(name != undefined){
+      this.name = name;
+    }
   }
 
   isCollidingWithPoint(x: number, y: number) {
@@ -256,7 +262,7 @@ class Stage {
 
     ctx.fillStyle = "white";
     ctx.fillText(
-      `(${this.x}, ${this.y})`,
+      `${this.name} (${this.x}, ${this.y})`,
       this.x + this.width * 0.5 - panX,
       this.y + this.height * 0.5 - panY,
       this.width

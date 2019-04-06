@@ -25,8 +25,9 @@ export class StagelistComponent {
 
   levelsFolder: string[];
   files: string[] = ['yo'];
-  indexMappings: Dictionary<string> = {};
-  stagesInDirectory: Dictionary<StageModel> = {};
+  indexMappings: Map<number, string>;
+  // indexMappings: Dictionary<string> = {};
+  stagesInDirectory: Map<string, StageModel>;
 
   orderedStages: StageModel[] = [];
   viewList: StageModel[] = [];
@@ -40,8 +41,8 @@ export class StagelistComponent {
   }
 
   initialise() {
-    this.indexMappings = {};
-    this.stagesInDirectory = {};
+    this.indexMappings = new Map<number, string>();
+    this.stagesInDirectory = new Map<string, StageModel>();
     this.orderedStages = [];
     this.viewList = [];
     this.metastageFileCount = 0;
@@ -76,16 +77,11 @@ export class StagelistComponent {
           let fileReads = dir.map((item) => {
             if(item.endsWith('.json')) { 
               return new Promise((resolve, reject) => {
-                  //this.loadStage(item, resolve);
                   this.fs.readFile(this.levelsFolder.join() + '/' + item, 'utf8', (err, data) => {
                     if(err) { reject(err); }
                     let stage: StageModel = JSON.parse(data);
                     stage.filename = item;
-                    this.stagesInDirectory[item] = stage;
-                    console.log("yopu promsied...");     
-
-                    console.log(this.stagesInDirectory);     
-          
+                    this.stagesInDirectory.set(item, stage);
                     resolve(data);
                   })
               })
@@ -102,22 +98,45 @@ export class StagelistComponent {
 
   loadMetastage = (err, data) => {
     if(err) {
-      alert(err)
+      alert(err);
       throw err;
     }
 
     let indexLines: FileIndex[] = JSON.parse(data);
-    indexLines.forEach(line => {
+    for(let line of indexLines) {
       this.metastageFileCount++;
-      this.indexMappings[line.index] = line.filename;
-    });
+      this.indexMappings.set(line.index, line.filename);
+
+    }
   }
 
   populateList = () => {
-    for(var i = 0; i < this.metastageFileCount; i++) {
-      console.log("I'm setting index " + i + " to be " + this.indexMappings[i] + " < filename, which has a MODEL: " + this.stagesInDirectory[this.indexMappings[i]]);
+    let orderedIndex: number = 0;
 
-      this.orderedStages[i] = this.stagesInDirectory[this.indexMappings[i]];
+    // check if directory has new stages not in metastage
+    this.stagesInDirectory.forEach((value: StageModel, key: string) => {
+      if(this.mapContainsValue(this.indexMappings, key)) {
+        // expected case, this will be caught in the second pass
+      } else {
+        this.orderedStages[orderedIndex] = value;
+        this.orderedStages[orderedIndex].changeFlag = 'new';
+        orderedIndex++;
+      }
+    })
+
+
+    // check if metastage has stages not in directory
+    for(var i = 0; i < this.metastageFileCount; i++) {
+      console.log("I'm setting index " + i + " to be " + this.indexMappings.get(i) + " < filename, which has a MODEL: " + this.stagesInDirectory.get(this.indexMappings.get(i)));
+      if(this.stagesInDirectory.has(this.indexMappings.get(i))) {
+        this.orderedStages[orderedIndex] = this.stagesInDirectory.get(this.indexMappings.get(i));
+        orderedIndex++;
+      } else {
+        // there's a stage named in metastage that doesn't exist in directory (meaning you deleted it)
+        // create a dummy stage, just to SHOW that it's gone, or just ignore i guess
+        console.log(`Couldn't find ${this.indexMappings.get(i)}.`);
+      }
+
     
        // get model belonging to string belonging to index
       //this.TEMPDEBUGorderedStagesStrings[i] = this.stagesInDirectory[this.indexMappings[i]].filename;
@@ -140,7 +159,7 @@ export class StagelistComponent {
     for(var i = 0; i < this.metastageFileCount; i++) {
       this.indexMappings[i] = this.orderedStages[i].filename;
       let fileIndex: FileIndex = {filename: '', index: -1};
-      fileIndex.filename = this.indexMappings[i];
+      fileIndex.filename = this.indexMappings.get(i);
       fileIndex.index = i;
       newFileIndexes.push(fileIndex);
     }
@@ -163,6 +182,15 @@ export class StagelistComponent {
   
   _sendStageToMapPreview(data: StageModel) {
     this.sendStageToMapPreview.emit(data)
+  }
+
+  mapContainsValue(map: Map<any, any>, value: any): boolean {
+    for (let [itemValue, itemKey] of map.entries()) {
+      if(itemKey == value) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 
