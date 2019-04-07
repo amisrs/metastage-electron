@@ -2,7 +2,7 @@ import { Component, OnInit, ElementRef, ViewChild, Input, HostListener } from '@
 import { fromEvent } from "rxjs";
 import { Observable } from "rxjs";
 import { Subscription } from "rxjs";
-import { StageModel } from '../StageModel';
+import { StageModel, StageLayerModel } from '../StageModel';
 
 // https://stackoverflow.com/questions/47371623/html-infinite-pan-able-canvas
 @Component({
@@ -39,7 +39,7 @@ export class WorldMapComponent implements OnInit {
   oldMouseX: number;
   oldMouseY: number;
   
-  gridSize: number = 10;
+  gridSize: number = 5;
 
   ctx: CanvasRenderingContext2D;
   boxArray: Stage[] = [];
@@ -52,7 +52,7 @@ export class WorldMapComponent implements OnInit {
   @Input() 
   set addStage (addStage: StageModel) {
     alert(`Adding ${addStage.filename}`);
-    this.boxArray.push(new Stage(0, 0, 200, 200, addStage));
+    this.boxArray.push(new Stage(0, 0, addStage.width * this.gridSize, addStage.height * this.gridSize, this.gridSize, addStage));
 
   }
 
@@ -79,20 +79,26 @@ export class WorldMapComponent implements OnInit {
     var yMin = 0;
     var yMax = 0;
 
-    for(var w = 0; w < this.gridCanvas.nativeElement.offsetWidth; w += this.gridSize) {
+    
+
+    for(var w:number = this.panX; w < this.gridCanvas.nativeElement.offsetWidth + Math.abs(this.panX); w += this.gridSize) {
+      if(this.panX < 0) {
+        
+      }
+
       this.gridCtx.beginPath();
       this.gridCtx.lineWidth = 0.5;
-      this.gridCtx.moveTo(w - this.panX, 0 - this.panY);
-      this.gridCtx.lineTo(w - this.panX, this.gridCanvas.nativeElement.offsetHeight - this.panY);
+      this.gridCtx.moveTo(w, (0));
+      this.gridCtx.lineTo(w, this.gridCanvas.nativeElement.offsetHeight);
       this.gridCtx.stroke();
     }
 
-    for(var h = 0; h < this.gridCanvas.nativeElement.offsetHeight; h += this.gridSize) {
-      this.gridCtx.beginPath();
-      this.gridCtx.lineWidth = 0.5;
-      this.gridCtx.moveTo(0 - this.panX, h - this.panY);
-      this.gridCtx.lineTo(this.gridCanvas.nativeElement.offsetWidth - this.panX, h - this.panY);
-      this.gridCtx.stroke();
+    for(var h = Math.abs(this.panY); h < this.gridCanvas.nativeElement.offsetHeight - Math.abs(this.panY); h += this.gridSize) {
+      // this.gridCtx.beginPath();
+      // this.gridCtx.lineWidth = 0.5;
+      // this.gridCtx.moveTo(0, h );
+      // this.gridCtx.lineTo(this.gridCanvas.nativeElement.offsetWidth, h);
+      // this.gridCtx.stroke();
     }
 
     for (var i = 0; i < this.boxArray.length; ++i) {
@@ -141,12 +147,12 @@ export class WorldMapComponent implements OnInit {
         this.selectedBox.x = this.roundToNearest(this.mouseX - this.selectOffsetX + this.panX, this.gridSize);
         this.selectedBox.y = this.roundToNearest(this.mouseY - this.selectOffsetY + this.panY, this.gridSize);
       }
-    }
-    
-    this.oldMouseX = this.mouseX;
-    this.oldMouseY = this.mouseY;
+      requestAnimationFrame(this.draw.bind(this));
+    } 
 
-    requestAnimationFrame(this.draw.bind(this));
+    this.oldMouseX = this.mouseX;
+    this.oldMouseY = this.mouseY;  
+
   }
 
   onMouseUp(e :MouseEvent) {
@@ -225,16 +231,31 @@ class Stage {
   height: number;
   isSelected: boolean;
 
+  pixelSize: number;
+
   name: string;
+  collisionLayer: StageLayerModel;
  
-  constructor(x: number, y: number, width: number, height: number, data?: StageModel) {
+  constructor(x: number, y: number, width: number, height: number, pixelSize: number, data: StageModel) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
 
-    if(name != undefined){
+    this.pixelSize = pixelSize;
+
+    if(data != undefined){
       this.name = data.filename;
+      for(var layer of data.layers) {
+        if(layer.name == 'Collision') {
+          this.collisionLayer = layer;
+          break;
+        }
+      };
+  
+      if(!this.collisionLayer) {
+        // no collisionlayer, nothing to draw
+      }  
     }
   }
 
@@ -249,23 +270,37 @@ class Stage {
   }
 
   draw(ctx: CanvasRenderingContext2D, panX: number, panY: number) {
-    if (this.isSelected) {
-      ctx.fillStyle = "darkcyan";
-      ctx.fillRect(
-        this.x - panX,
-        this.y - panY,
-        this.width,
-        this.height
-      );
-      ctx.fillStyle = "black";
-    } else {			
-      ctx.fillRect(
-        this.x - panX,
-        this.y - panY,
-        this.width,
-        this.height
-      );
+    // if (this.isSelected) {
+    //   ctx.fillStyle = "darkcyan";
+    //   ctx.fillRect(
+    //     this.x - panX,
+    //     this.y - panY,
+    //     this.width,
+    //     this.height
+    //   );
+    //   ctx.fillStyle = "black";
+    // } else {			
+    //   ctx.fillRect(
+    //     this.x - panX,
+    //     this.y - panY,
+    //     this.width,
+    //     this.height
+    //   );
+    // }
+
+    for (var i = 0; i < this.collisionLayer.width * this.collisionLayer.height; i++)
+    {
+        let currentTile: number = this.collisionLayer.data[i] - 1;
+        if (currentTile == -1)
+        {
+            continue;
+        }
+        let currentColumn: number = i % this.collisionLayer.width;
+        let currentRow: number = Math.floor(i / this.collisionLayer.width);
+
+        ctx.fillRect(this.x + currentColumn * this.pixelSize - panX, this.y + currentRow * this.pixelSize - panY, this.pixelSize, this.pixelSize);
     }
+
 
     ctx.fillStyle = "white";
     ctx.fillText(
