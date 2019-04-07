@@ -1,5 +1,6 @@
-import { Component, ViewChild, ElementRef, OnInit, HostListener } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, HostListener, Input } from '@angular/core';
 import { fromEvent } from "rxjs";
+import { StageModel } from './StageModel';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,11 @@ export class AppComponent implements OnInit {
   divWidth: number;
   
   divElement: ElementRef;
+  addStage: StageModel;
+
+  receiveAddStageFromStageList(data) {
+    this.addStage = data;
+  }
 
   ngOnInit() {
     console.log("app oninit");

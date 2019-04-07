@@ -16,9 +16,19 @@ export class MapBarComponent implements OnInit  {
   constructor() { }
 
   clickedStage: StageModel;
+  @Output() addStageToWorldMap = new EventEmitter<StageModel>();
+  
+  _addStageToWorldMap(data: StageModel) {
+    this.addStageToWorldMap.emit(data)
+  }
 
-  receiveStageFromStageList(data) {
+
+  receiveClickedStageFromStageList(data) {
     this.clickedStage = data;
+  }
+
+  receiveAddStageFromStageList(data) {
+    this._addStageToWorldMap(data);
   }
 
   ngOnInit() {

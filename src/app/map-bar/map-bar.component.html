@@ -1,6 +1,6 @@
 <div class="container map-bar split" id="one">
     <div class="row h-75 stagelist-container">
-        <app-stagelist (sendStageToMapPreview)="receiveStageFromStageList($event)" class="stagelist"></app-stagelist>
+        <app-stagelist (sendStageToMapPreview)="receiveClickedStageFromStageList($event)" (addStageToWorldMap)="receiveAddStageFromStageList($event)" class="stagelist"></app-stagelist>
     </div>
     <div class="square-box">
         <app-map-preview [clickedStage]="clickedStage" class="row map-preview square-content" ></app-map-preview>

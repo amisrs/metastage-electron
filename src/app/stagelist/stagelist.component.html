@@ -5,7 +5,13 @@
   </div> 
 </div>
 <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
-  <div class="example-box" *ngFor="let stage of viewList" (click)="_sendStageToMapPreview(stage)" [ngClass]="stage.changeFlag == 'new' ? 'new' : 'old'" cdkDrag>
-    {{stage.filename}}
+  <div class="example-box d-flex" *ngFor="let stage of viewList" (click)="_sendStageToMapPreview(stage)" [ngClass]="stage.changeFlag == 'new' ? 'new' : 'old'" cdkDrag>
+    <div class="mr-auto p-2">
+      {{stage.filename}}
+    </div>
+    <button class="p-2" (click)="_addStageToWorldMap(stage)">
+      +
+    </button>
+    
   </div>
 </div>

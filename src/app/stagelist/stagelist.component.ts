@@ -179,9 +179,13 @@ export class StagelistComponent {
   }
 
   @Output() sendStageToMapPreview = new EventEmitter<StageModel>();
-  
   _sendStageToMapPreview(data: StageModel) {
     this.sendStageToMapPreview.emit(data)
+  }
+
+  @Output() addStageToWorldMap = new EventEmitter<StageModel>();
+  _addStageToWorldMap(data: StageModel) {
+    this.addStageToWorldMap.emit(data)
   }
 
   mapContainsValue(map: Map<any, any>, value: any): boolean {
@@ -192,6 +196,7 @@ export class StagelistComponent {
     }
     return false;
   }
+  
 }
 
 

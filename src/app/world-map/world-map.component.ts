@@ -2,6 +2,7 @@ import { Component, OnInit, ElementRef, ViewChild, Input, HostListener } from '@
 import { fromEvent } from "rxjs";
 import { Observable } from "rxjs";
 import { Subscription } from "rxjs";
+import { StageModel } from '../StageModel';
 
 // https://stackoverflow.com/questions/47371623/html-infinite-pan-able-canvas
 @Component({
@@ -47,6 +48,13 @@ export class WorldMapComponent implements OnInit {
 
   @ViewChild("grid") gridCanvas: ElementRef;
   gridCtx: CanvasRenderingContext2D;
+
+  @Input() 
+  set addStage (addStage: StageModel) {
+    alert(`Adding ${addStage.filename}`);
+    this.boxArray.push(new Stage(0, 0, 200, 200, addStage));
+
+  }
 
   draw = () => {
     this.ctx.fillStyle = "rgba(255, 255, 255, 0.0)";
@@ -111,8 +119,8 @@ export class WorldMapComponent implements OnInit {
         if (this.boxArray[i].isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
           this.selectedBox = this.boxArray[i];
           this.selectedBox.isSelected = true;
-          this.selectOffsetX = this.mouseX - this.selectedBox.x;
-          this.selectOffsetY = this.mouseY - this.selectedBox.y;
+          this.selectOffsetX = this.mouseX - this.selectedBox.x + this.panX;
+          this.selectOffsetY = this.mouseY - this.selectedBox.y + this.panY; 
           requestAnimationFrame(this.draw.bind(this));
           return;
         }
@@ -179,7 +187,6 @@ export class WorldMapComponent implements OnInit {
   ngOnInit() {
     this.prepareCanvas();
 
-    this.boxArray.push(new Stage(0, 0, 200, 200))
     requestAnimationFrame(this.draw.bind(this));
   }
   
@@ -220,14 +227,14 @@ class Stage {
 
   name: string;
  
-  constructor(x: number, y: number, width: number, height: number, name?: string) {
+  constructor(x: number, y: number, width: number, height: number, data?: StageModel) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
-    
+
     if(name != undefined){
-      this.name = name;
+      this.name = data.filename;
     }
   }
 
