@@ -39,7 +39,7 @@ export class WorldMapComponent implements OnInit {
   oldMouseX: number;
   oldMouseY: number;
   
-  gridSize: number = 5;
+  gridSize: number = 10;
 
   ctx: CanvasRenderingContext2D;
   boxArray: Stage[] = [];
@@ -80,25 +80,35 @@ export class WorldMapComponent implements OnInit {
     var yMax = 0;
 
     
+    for(var column:number = -this.gridSize; column < parseFloat(this.gridCanvas.nativeElement.getAttribute('width')); column += this.gridSize) {
+      let x:number;
+      // column 1 will be drawn at panX (this gives reversed scrolling)
+      //    as panX gets more negative
+      // if(this.panX >= 0) {
+      //   x = (this.gridSize - (this.panX % this.gridSize)) + (column);
+      // }
+      // else {
+      //   x = (this.panX % this.gridSize) + (column);
+      // }
 
-    for(var w:number = this.panX; w < this.gridCanvas.nativeElement.offsetWidth + Math.abs(this.panX); w += this.gridSize) {
-      if(this.panX < 0) {
-        
-      }
+      x = (this.gridSize - (this.panX % this.gridSize)) + (column);
+      this.gridCtx.beginPath();
+      this.gridCtx.lineWidth = 0.5;
+      this.gridCtx.moveTo(x, 0);
+      this.gridCtx.lineTo(x, this.gridCanvas.nativeElement.getAttribute('height'));
+      this.gridCtx.stroke();
+    } 
+
+    for(var row = -this.gridSize; row < parseFloat(this.gridCanvas.nativeElement.getAttribute('height')); row += this.gridSize) {
+      let y:number;
+
+      y = (this.gridSize - (this.panY % this.gridSize)) + (row);
 
       this.gridCtx.beginPath();
       this.gridCtx.lineWidth = 0.5;
-      this.gridCtx.moveTo(w, (0));
-      this.gridCtx.lineTo(w, this.gridCanvas.nativeElement.offsetHeight);
+      this.gridCtx.moveTo(0, y);
+      this.gridCtx.lineTo(this.gridCanvas.nativeElement.getAttribute('width'), y);
       this.gridCtx.stroke();
-    }
-
-    for(var h = Math.abs(this.panY); h < this.gridCanvas.nativeElement.offsetHeight - Math.abs(this.panY); h += this.gridSize) {
-      // this.gridCtx.beginPath();
-      // this.gridCtx.lineWidth = 0.5;
-      // this.gridCtx.moveTo(0, h );
-      // this.gridCtx.lineTo(this.gridCanvas.nativeElement.offsetWidth, h);
-      // this.gridCtx.stroke();
     }
 
     for (var i = 0; i < this.boxArray.length; ++i) {
@@ -302,7 +312,7 @@ class Stage {
     }
 
 
-    ctx.fillStyle = "white";
+    ctx.fillStyle = "red";
     ctx.fillText(
       `${this.name} (${this.x}, ${this.y})`,
       this.x + this.width * 0.5 - panX,
