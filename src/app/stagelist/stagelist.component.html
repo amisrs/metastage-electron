@@ -1,15 +1,15 @@
-<div class="container-fluid">
+<!-- <div class="container-fluid">
   <div class="row">
-      <input class="col" type="button" (click)="directoryChange()" value="Load">
-      <input class="col" type="button" (click)="save()" value="Save">      
+      <input class="col button" type="button" (click)="directoryChange()" value="Load">
+      <input class="col button" type="button" (click)="save()" value="Save">      
   </div> 
-</div>
+</div> -->
 <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
   <div class="example-box d-flex" *ngFor="let stage of viewList" (click)="_sendStageToMapPreview(stage)" [ngClass]="stage.changeFlag == 'new' ? 'new' : 'old'" cdkDrag>
     <div class="mr-auto p-2">
       {{stage.filename}}
     </div>
-    <button class="p-2" (click)="_addStageToWorldMap(stage)">
+    <button class="p-2 circle-button" (click)="_addStageToWorldMap(stage)">
       +
     </button>
     

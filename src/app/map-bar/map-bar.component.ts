@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, EventEmitter, Output, ChangeDetectionStrategy } from '@angular/core';
 import { StageModel } from '../StageModel';
+import { StagelistComponent } from '../stagelist/stagelist.component';
 
 @Component({
   selector: 'app-map-bar',
@@ -15,6 +16,19 @@ export class MapBarComponent implements OnInit  {
 
   constructor() { }
 
+  // events going to stagelist
+  @ViewChild(StagelistComponent)
+  stagelistComponent: StagelistComponent;
+
+  directoryChange() {
+    this.stagelistComponent.directoryChange();
+  }
+
+  save() {
+    this.stagelistComponent.save();
+  }
+
+  // events coming from stagelist
   clickedStage: StageModel;
   @Output() addStageToWorldMap = new EventEmitter<StageModel>();
   
@@ -30,6 +44,7 @@ export class MapBarComponent implements OnInit  {
   receiveAddStageFromStageList(data) {
     this._addStageToWorldMap(data);
   }
+  
 
   ngOnInit() {
   }

@@ -1,5 +1,12 @@
 <div class="container map-bar split" id="one">
-    <div class="row h-75 stagelist-container">
+    <div class="container-fluid">
+        <div class="row">
+            <input class="col button" type="button" (click)="directoryChange()" value="Load">
+            <input class="col button" type="button" (click)="save()" value="Save">      
+        </div> 
+    </div>
+              
+    <div class="row h-75 stagelist-container scrollbar">
         <app-stagelist (sendStageToMapPreview)="receiveClickedStageFromStageList($event)" (addStageToWorldMap)="receiveAddStageFromStageList($event)" class="stagelist"></app-stagelist>
     </div>
     <div class="square-box">

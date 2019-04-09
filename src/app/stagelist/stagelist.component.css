@@ -1,6 +1,6 @@
 .example-list {
 	min-height: 60px;
-	background: #202225;
+	background: #2f3338;
 	border-radius: 4px;
 	overflow: hidden;
 }
@@ -19,10 +19,32 @@
 }
 
 .example-box:hover {
-	color: #d0d3d8;
-	background: #404244;
+	color: #dee1e7;
+	background: #4a4e53;
 }
-  
+
+
+.circle-button {
+	width: 32px;
+    height: 32px;
+
+    background-color: transparent;
+    border-color: #c5c9cf9f;
+    color: #c5c9cf9f;
+    border-radius: 100%;
+    border-style: solid;
+    border-width: 2px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    line-height: 0px;
+    font-size: 26px;
+    margin-right: 18px;
+}
+
+
 .cdk-drag-preview {
 	box-sizing: border-box;
 	border-radius: 4px;
@@ -36,7 +58,7 @@
 }
 
 .new {
-	background: lightgreen;
+	color: lightgreen;
 }
 
 .add {

@@ -1,3 +1,10 @@
-.map {
+.world {
     position: absolute;
+}
+
+.back {
+    background: #202225;
+}
+
+.map {
 }

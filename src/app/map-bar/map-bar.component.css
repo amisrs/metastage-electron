@@ -21,4 +21,37 @@
     padding: 0px;
     height: 100%;
     width: 100%;
+	background: #2f3338;
+
+}
+
+.button {
+	background-color: #2f3338; /* Green */
+	border: none;
+	color: #b9bbbe;
+	padding: 15px 32px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+} 
+
+.button:hover {
+	color: #dee1e7;
+	background: #4a4e53;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background: #2f3338;
+
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: #202225;
 }

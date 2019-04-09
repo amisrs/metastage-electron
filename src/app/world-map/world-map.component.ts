@@ -15,6 +15,7 @@ export class WorldMapComponent implements OnInit {
   // resizeObservable: Observable<Event>
   // resizeSubscription: Subscription
 
+
   @Input() divElement: ElementRef;
 
   @Input() divHeight: number;
@@ -23,13 +24,15 @@ export class WorldMapComponent implements OnInit {
 
   @Input() topPosition: number;
   @Input() leftPosition: number;
+  bounds: ClientRect;
 
-  mouseHeld: boolean;
-  selectedBox: Stage;
 
   // where did you click the box in relation to its center
   selectOffsetX: number;
   selectOffsetY: number;
+  mouseHeld: boolean;
+  selectedBox: Stage;
+  boxArray: Stage[] = [];
 
   panX: number = 0;
   panY: number = 0;
@@ -42,12 +45,16 @@ export class WorldMapComponent implements OnInit {
   gridSize: number = 10;
 
   ctx: CanvasRenderingContext2D;
-  boxArray: Stage[] = [];
-  @ViewChild("map") canvas: ElementRef;
-  bounds: ClientRect;
-
-  @ViewChild("grid") gridCanvas: ElementRef;
   gridCtx: CanvasRenderingContext2D;
+
+  @ViewChild("map") canvas: ElementRef;
+  @ViewChild("grid") gridCanvas: ElementRef;
+  @ViewChild("back") background: ElementRef;
+
+
+  gridColor: string = "rgba(111, 115, 118, 1)";
+  mapColor: string = "rgba(32, 34, 37, 1)";
+  pixelColor: string = "rgba(54, 57, 63, 1)";
 
   @Input() 
   set addStage (addStage: StageModel) {
@@ -57,18 +64,22 @@ export class WorldMapComponent implements OnInit {
   }
 
   draw = () => {
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.0)";
-    this.gridCtx.fillStyle = "gray";
+    this.ctx.fillStyle = this.mapColor;
     this.ctx.fillRect(0,0, this.canvas.nativeElement.offsetWidth, this.canvas.nativeElement.offsetHeight);
-    this.gridCtx.fillRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
-    this.canvas.nativeElement.setAttribute('width', this.divWidth);
-    this.canvas.nativeElement.setAttribute('height', this.divHeight);
+    // this.gridCtx.fillRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
+    this.gridCtx.clearRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
+    this.gridCtx.fillStyle = this.gridColor;
+
+    this.background.nativeElement.setAttribute('width', this.divWidth);
+    this.background.nativeElement.setAttribute('height', this.divHeight);
     this.gridCanvas.nativeElement.setAttribute('width', this.divWidth);
     this.gridCanvas.nativeElement.setAttribute('height', this.divHeight);
-
+    this.canvas.nativeElement.setAttribute('width', this.divWidth);
+    this.canvas.nativeElement.setAttribute('height', this.divHeight);
 
     let mapStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 1;`;
     let gridStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 0;`;
+    this.background.nativeElement.setAttribute('style', mapStyle);
     this.gridCanvas.nativeElement.setAttribute('style', gridStyle);
     this.canvas.nativeElement.setAttribute('style', mapStyle);
 
@@ -121,7 +132,7 @@ export class WorldMapComponent implements OnInit {
       yMax = box.y + box.height - this.panY;
       // if box is within vision, draw it
       if (xMax > 0 && xMin < this.canvas.nativeElement.offsetWidth && yMax > 0 && yMin < this.canvas.nativeElement.offsetHeight) {
-        this.ctx.fillStyle = "black";
+        this.ctx.fillStyle = this.pixelColor;
         box.draw(this.ctx, this.panX, this.panY);
       }
     }
@@ -177,14 +188,17 @@ export class WorldMapComponent implements OnInit {
   constructor() { }
 
   prepareCanvas() {
-    this.canvas.nativeElement.setAttribute('width', this.divWidth)
-    this.canvas.nativeElement.setAttribute('height', this.divHeight)
+    this.background.nativeElement.setAttribute('width', this.divWidth)
+    this.background.nativeElement.setAttribute('height', this.divHeight)
     this.gridCanvas.nativeElement.setAttribute('width', this.divWidth)
     this.gridCanvas.nativeElement.setAttribute('height', this.divHeight)
+    this.canvas.nativeElement.setAttribute('width', this.divWidth)
+    this.canvas.nativeElement.setAttribute('height', this.divHeight)
 
     let mapStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 1;`;
     let gridStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 0;`;
 
+    this.background.nativeElement.setAttribute('style', gridStyle);
     this.gridCanvas.nativeElement.setAttribute('style', gridStyle);
     this.canvas.nativeElement.setAttribute('style', mapStyle);
 
@@ -280,23 +294,6 @@ class Stage {
   }
 
   draw(ctx: CanvasRenderingContext2D, panX: number, panY: number) {
-    // if (this.isSelected) {
-    //   ctx.fillStyle = "darkcyan";
-    //   ctx.fillRect(
-    //     this.x - panX,
-    //     this.y - panY,
-    //     this.width,
-    //     this.height
-    //   );
-    //   ctx.fillStyle = "black";
-    // } else {			
-    //   ctx.fillRect(
-    //     this.x - panX,
-    //     this.y - panY,
-    //     this.width,
-    //     this.height
-    //   );
-    // }
 
     for (var i = 0; i < this.collisionLayer.width * this.collisionLayer.height; i++)
     {
@@ -312,7 +309,6 @@ class Stage {
     }
 
 
-    ctx.fillStyle = "red";
     ctx.fillText(
       `${this.name} (${this.x}, ${this.y})`,
       this.x + this.width * 0.5 - panX,
@@ -320,6 +316,5 @@ class Stage {
       this.width
     );
     
-    ctx.fillStyle = "black";
   }
 }
