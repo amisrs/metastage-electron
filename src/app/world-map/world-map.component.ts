@@ -43,6 +43,7 @@ export class WorldMapComponent implements OnInit {
   oldMouseY: number;
   
   gridSize: number = 10;
+  scrollAmount: number = 0.5;
 
   ctx: CanvasRenderingContext2D;
   gridCtx: CanvasRenderingContext2D;
@@ -54,35 +55,35 @@ export class WorldMapComponent implements OnInit {
 
   gridColor: string = "rgba(111, 115, 118, 1)";
   mapColor: string = "rgba(32, 34, 37, 1)";
-  pixelColor: string = "rgba(54, 57, 63, 1)";
+  pixelColor: string = "rgba(166, 166, 166, 1)";
 
   @Input() 
   set addStage (addStage: StageModel) {
     alert(`Adding ${addStage.filename}`);
-    this.boxArray.push(new Stage(0, 0, addStage.width * this.gridSize, addStage.height * this.gridSize, this.gridSize, addStage));
-
+    this.boxArray.push(new Stage(0, 0, addStage.width, addStage.height, this.gridSize, addStage));
+    this.draw();
   }
 
   draw = () => {
-    this.ctx.fillStyle = this.mapColor;
-    this.ctx.fillRect(0,0, this.canvas.nativeElement.offsetWidth, this.canvas.nativeElement.offsetHeight);
     // this.gridCtx.fillRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
-    this.gridCtx.clearRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
-    this.gridCtx.fillStyle = this.gridColor;
+    // this.gridCtx.clearRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
+    // this.gridCtx.fillStyle = this.gridColor;
 
     this.background.nativeElement.setAttribute('width', this.divWidth);
     this.background.nativeElement.setAttribute('height', this.divHeight);
-    this.gridCanvas.nativeElement.setAttribute('width', this.divWidth);
-    this.gridCanvas.nativeElement.setAttribute('height', this.divHeight);
+    // this.gridCanvas.nativeElement.setAttribute('width', this.divWidth);
+    // this.gridCanvas.nativeElement.setAttribute('height', this.divHeight);
     this.canvas.nativeElement.setAttribute('width', this.divWidth);
     this.canvas.nativeElement.setAttribute('height', this.divHeight);
 
     let mapStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 1;`;
     let gridStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 0;`;
-    this.background.nativeElement.setAttribute('style', mapStyle);
-    this.gridCanvas.nativeElement.setAttribute('style', gridStyle);
+    this.background.nativeElement.setAttribute('style', gridStyle);
+    // this.gridCanvas.nativeElement.setAttribute('style', gridStyle);
     this.canvas.nativeElement.setAttribute('style', mapStyle);
 
+    this.ctx.fillStyle = this.mapColor;
+    this.ctx.fillRect(0,0, this.canvas.nativeElement.offsetWidth, this.canvas.nativeElement.offsetHeight);
 
     var box = null;
     var xMin = 0;
@@ -90,36 +91,29 @@ export class WorldMapComponent implements OnInit {
     var yMin = 0;
     var yMax = 0;
 
-    
-    for(var column:number = -this.gridSize; column < parseFloat(this.gridCanvas.nativeElement.getAttribute('width')); column += this.gridSize) {
+    this.ctx.strokeStyle = this.gridColor;
+    for(var column:number = -this.gridSize; column < parseFloat(this.canvas.nativeElement.getAttribute('width')); column += this.gridSize) {
       let x:number;
-      // column 1 will be drawn at panX (this gives reversed scrolling)
-      //    as panX gets more negative
-      // if(this.panX >= 0) {
-      //   x = (this.gridSize - (this.panX % this.gridSize)) + (column);
-      // }
-      // else {
-      //   x = (this.panX % this.gridSize) + (column);
-      // }
-
       x = (this.gridSize - (this.panX % this.gridSize)) + (column);
-      this.gridCtx.beginPath();
-      this.gridCtx.lineWidth = 0.5;
-      this.gridCtx.moveTo(x, 0);
-      this.gridCtx.lineTo(x, this.gridCanvas.nativeElement.getAttribute('height'));
-      this.gridCtx.stroke();
+
+      this.ctx.beginPath();
+      
+      this.ctx.lineWidth = 0.5;
+      this.ctx.moveTo(x, 0);
+      this.ctx.lineTo(x, this.canvas.nativeElement.getAttribute('height'));
+      this.ctx.stroke();
     } 
 
-    for(var row = -this.gridSize; row < parseFloat(this.gridCanvas.nativeElement.getAttribute('height')); row += this.gridSize) {
+    for(var row = -this.gridSize; row < parseFloat(this.canvas.nativeElement.getAttribute('height')); row += this.gridSize) {
       let y:number;
 
       y = (this.gridSize - (this.panY % this.gridSize)) + (row);
 
-      this.gridCtx.beginPath();
-      this.gridCtx.lineWidth = 0.5;
-      this.gridCtx.moveTo(0, y);
-      this.gridCtx.lineTo(this.gridCanvas.nativeElement.getAttribute('width'), y);
-      this.gridCtx.stroke();
+      this.ctx.beginPath();
+      this.ctx.lineWidth = 0.5;
+      this.ctx.moveTo(0, y);
+      this.ctx.lineTo(this.canvas.nativeElement.getAttribute('width'), y);
+      this.ctx.stroke();
     }
 
     for (var i = 0; i < this.boxArray.length; ++i) {
@@ -133,7 +127,7 @@ export class WorldMapComponent implements OnInit {
       // if box is within vision, draw it
       if (xMax > 0 && xMin < this.canvas.nativeElement.offsetWidth && yMax > 0 && yMin < this.canvas.nativeElement.offsetHeight) {
         this.ctx.fillStyle = this.pixelColor;
-        box.draw(this.ctx, this.panX, this.panY);
+        box.draw(this.ctx, this.panX, this.panY, this.gridSize);
       }
     }
   }
@@ -146,8 +140,8 @@ export class WorldMapComponent implements OnInit {
         if (this.boxArray[i].isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
           this.selectedBox = this.boxArray[i];
           this.selectedBox.isSelected = true;
-          this.selectOffsetX = this.mouseX - this.selectedBox.x + this.panX;
-          this.selectOffsetY = this.mouseY - this.selectedBox.y + this.panY; 
+          this.selectOffsetX = this.mouseX - this.selectedBox.x * this.gridSize + this.panX;
+          this.selectOffsetY = this.mouseY - this.selectedBox.y * this.gridSize+ this.panY; 
           requestAnimationFrame(this.draw.bind(this));
           return;
         }
@@ -165,8 +159,8 @@ export class WorldMapComponent implements OnInit {
         this.panX += this.oldMouseX - this.mouseX;
         this.panY += this.oldMouseY - this.mouseY;
       } else {
-        this.selectedBox.x = this.roundToNearest(this.mouseX - this.selectOffsetX + this.panX, this.gridSize);
-        this.selectedBox.y = this.roundToNearest(this.mouseY - this.selectOffsetY + this.panY, this.gridSize);
+        this.selectedBox.x = this.roundToNearest(this.mouseX - this.selectOffsetX + this.panX, this.gridSize) / this.gridSize;
+        this.selectedBox.y = this.roundToNearest(this.mouseY - this.selectOffsetY + this.panY, this.gridSize) / this.gridSize;
       }
       requestAnimationFrame(this.draw.bind(this));
     } 
@@ -176,7 +170,7 @@ export class WorldMapComponent implements OnInit {
 
   }
 
-  onMouseUp(e :MouseEvent) {
+  onMouseUp(e: MouseEvent) {
     this.mouseHeld = false;
     if (this.selectedBox) {
       this.selectedBox.isSelected = false;
@@ -185,31 +179,54 @@ export class WorldMapComponent implements OnInit {
     }
   }
 
+  // @HostListener('window:scroll', ['$event'])
+  onScroll(e: WheelEvent) {
+    console.log(e);
+
+    if(e.deltaY >= 0) {
+      // zoom out'
+      if(this.gridSize - this.scrollAmount <= this.scrollAmount) {
+        this.gridSize = this.scrollAmount;
+      } else {
+        this.gridSize -= this.scrollAmount;
+      }
+    } else {
+      if(this.gridSize + this.scrollAmount >= 20) {
+        this.gridSize = 20;
+      } else {
+        this.gridSize += this.scrollAmount;
+      }
+    }
+
+    
+    this.draw();
+  }
+
   constructor() { }
 
   prepareCanvas() {
     this.background.nativeElement.setAttribute('width', this.divWidth)
     this.background.nativeElement.setAttribute('height', this.divHeight)
-    this.gridCanvas.nativeElement.setAttribute('width', this.divWidth)
-    this.gridCanvas.nativeElement.setAttribute('height', this.divHeight)
+    // this.gridCanvas.nativeElement.setAttribute('width', this.divWidth)
+    // this.gridCanvas.nativeElement.setAttribute('height', this.divHeight)
     this.canvas.nativeElement.setAttribute('width', this.divWidth)
     this.canvas.nativeElement.setAttribute('height', this.divHeight)
 
     let mapStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 1;`;
-    let gridStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 0;`;
+    // let gridStyle: string = `top: ${this.topPosition}px; left: ${this.leftPosition}px; z-index: 0;`;
 
-    this.background.nativeElement.setAttribute('style', gridStyle);
-    this.gridCanvas.nativeElement.setAttribute('style', gridStyle);
+    // this.background.nativeElement.setAttribute('style', gridStyle);
+    // this.gridCanvas.nativeElement.setAttribute('style', gridStyle);
     this.canvas.nativeElement.setAttribute('style', mapStyle);
 
     this.bounds = this.canvas.nativeElement.getBoundingClientRect();
     this.ctx = this.canvas.nativeElement.getContext("2d");
-    this.gridCtx = this.gridCanvas.nativeElement.getContext("2d");
+    // this.gridCtx = this.gridCanvas.nativeElement.getContext("2d");
 
-    this.ctx.fillStyle = "rgba(255, 255, 255, 0.0)";
-    this.gridCtx.fillStyle = "gray";
+    this.ctx.fillStyle = this.mapColor;
+    // this.gridCtx.fillStyle = "gray";
     this.ctx.fillRect(0,0, this.canvas.nativeElement.offsetWidth, this.canvas.nativeElement.offsetHeight);
-    this.gridCtx.fillRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
+    // this.gridCtx.fillRect(0,0, this.gridCanvas.nativeElement.offsetWidth, this.gridCanvas.nativeElement.offsetHeight);
 
     this.draw();
   }
@@ -259,10 +276,14 @@ class Stage {
 
   name: string;
   collisionLayer: StageLayerModel;
+  openBorderTiles: number[] = [];
+  
+  // open borders that are adjacent to another stage's open borders
+  openBorderCrossings: number[] = [];
  
   constructor(x: number, y: number, width: number, height: number, pixelSize: number, data: StageModel) {
-    this.x = x;
-    this.y = y;
+    this.x = x / pixelSize;
+    this.y = y / pixelSize;
     this.width = width;
     this.height = height;
 
@@ -280,39 +301,88 @@ class Stage {
       if(!this.collisionLayer) {
         // no collisionlayer, nothing to draw
       }  
+
+      this.getOpenBorders();
     }
   }
 
+  getOpenBorders() {
+    // get the tiles that are:
+    //    0 in collisionLayer.data AND
+    //    (on the top/bottom edge) OR (on the left/right edge)
+    
+    // top edge is      0 <= i < width
+    // left edge is     i % width == 0
+    // bottom edge is   width * (height - 1) < i < width * height
+    // right edge is    i % width = width - 1
+
+    // top
+    for (var i = 0; i < this.collisionLayer.width; i++)
+    {
+      if(this.collisionLayer.data[i] == 0) {
+        this.openBorderTiles.push(i);
+      }
+    }
+
+    // left
+    for (var i = 0; i < this.collisionLayer.width * this.collisionLayer.height 
+      && this.collisionLayer.data[i] == 0; i += this.collisionLayer.width)
+    {
+      this.openBorderTiles.push(i);
+    }
+
+    // bottom
+    for (var i = this.collisionLayer.width * this.collisionLayer.height - this.collisionLayer.width;
+        i < this.collisionLayer.width * this.collisionLayer.height && this.collisionLayer.data[i] == 0; i++)
+    {
+      this.openBorderTiles.push(i);
+    }
+
+    // right
+    for (var i = this.collisionLayer.width - 1; i < this.collisionLayer.width * this.collisionLayer.height 
+      && this.collisionLayer.data[i] == 0; i += this.collisionLayer.width)
+    {
+      this.openBorderTiles.push(i);
+    }
+  }
+
+  compareOpenBorders(otherOpenBorders: number[]) {
+
+  }
+
   isCollidingWithPoint(x: number, y: number) {
-    return (x > this.x && x < this.x + this.width) 
-        && (y > this.y && y < this.y + this.height);
+    return (x > this.x * this.pixelSize && x < this.x * this.pixelSize + this.width * this.pixelSize) 
+        && (y > this.y * this.pixelSize && y < this.y * this.pixelSize + this.height * this.pixelSize);
   }
 
-  drag(newX: number, newY: number) {
-    this.x = newX - this.width * 0.5;
-    this.y = newY - this.height * 0.5;
-  }
+  // drag(newX: number, newY: number) {
+  //   this.x = (newX - this.width * this.pixelSize * 0.5) / this.pixelSize;
+  //   this.y = (newY - this.height * this.pixelSize * 0.5) / this.pixelSize;
+  // }
 
-  draw(ctx: CanvasRenderingContext2D, panX: number, panY: number) {
-
+  draw(ctx: CanvasRenderingContext2D, panX: number, panY: number, pixelSize: number) {
+    this.pixelSize = pixelSize;
     for (var i = 0; i < this.collisionLayer.width * this.collisionLayer.height; i++)
     {
-        let currentTile: number = this.collisionLayer.data[i] - 1;
-        if (currentTile == -1)
-        {
-            continue;
-        }
         let currentColumn: number = i % this.collisionLayer.width;
         let currentRow: number = Math.floor(i / this.collisionLayer.width);
 
-        ctx.fillRect(this.x + currentColumn * this.pixelSize - panX, this.y + currentRow * this.pixelSize - panY, this.pixelSize, this.pixelSize);
+        if(this.openBorderTiles.includes(i)){
+          ctx.fillStyle = "green";
+        } else if (this.collisionLayer.data[i] - 1 != -1) {
+          ctx.fillStyle = "grey";
+        } else {
+          continue;
+        }
+
+        ctx.fillRect(this.x * pixelSize + currentColumn * pixelSize - panX, this.y * pixelSize + currentRow * pixelSize - panY, pixelSize, pixelSize);
     }
 
 
     ctx.fillText(
       `${this.name} (${this.x}, ${this.y})`,
-      this.x + this.width * 0.5 - panX,
-      this.y + this.height * 0.5 - panY,
+      this.x + this.width * this.pixelSize * 0.5 - panX,
+      this.y + this.height * this.pixelSize * 0.5 - panY,
       this.width
     );
     
