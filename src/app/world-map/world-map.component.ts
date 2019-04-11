@@ -276,6 +276,8 @@ class Stage {
 
   name: string;
   collisionLayer: StageLayerModel;
+
+  dataMap: number[][] = [];
   openBorderTiles: number[] = [];
   
   // open borders that are adjacent to another stage's open borders
@@ -300,6 +302,14 @@ class Stage {
   
       if(!this.collisionLayer) {
         // no collisionlayer, nothing to draw
+      } else {
+        for(var h = 1; h < this.collisionLayer.height + 1; h++) {
+          // w = width % i
+          this.dataMap[h] = [];
+          for(var w = 0; w < this.collisionLayer.width; w++) {
+            this.dataMap[h][w] = this.collisionLayer.data[(h - 1) * this.collisionLayer.width + w];
+          }
+        }
       }  
 
       this.getOpenBorders();
