@@ -278,10 +278,10 @@ class Stage {
   collisionLayer: StageLayerModel;
 
   dataMap: number[][] = [];
-  openBorderTiles: number[] = [];
+  openBorderTiles: [number, number][] = [];
   
   // open borders that are adjacent to another stage's open borders
-  openBorderCrossings: number[] = [];
+  openBorderCrossings: [number, number][] = [];
  
   constructor(x: number, y: number, width: number, height: number, pixelSize: number, data: StageModel) {
     this.x = x / pixelSize;
@@ -293,7 +293,7 @@ class Stage {
 
     if(data != undefined){
       this.name = data.filename;
-      for(var layer of data.layers) {
+      for(let layer of data.layers) {
         if(layer.name == 'Collision') {
           this.collisionLayer = layer;
           break;
@@ -303,56 +303,19 @@ class Stage {
       if(!this.collisionLayer) {
         // no collisionlayer, nothing to draw
       } else {
-        for(var h = 1; h < this.collisionLayer.height + 1; h++) {
-          // w = width % i
-          this.dataMap[h] = [];
-          for(var w = 0; w < this.collisionLayer.width; w++) {
-            this.dataMap[h][w] = this.collisionLayer.data[(h - 1) * this.collisionLayer.width + w];
+        for(let w = 0; w < this.collisionLayer.width; w++) {
+          this.dataMap[w] = [];
+          for(let h = 0; h < this.collisionLayer.height; h++) {
+            this.dataMap[w][h] = this.collisionLayer.data[h * this.collisionLayer.width + w];
+            
+            // check for open borders
+            if(h == 0 || w == 0 || h == this.collisionLayer.height - 1 || w == this.collisionLayer.width - 1) {
+              // it's gonna push the corners twice but shouldn't matter
+              this.openBorderTiles.push([w, h])
+            }
           }
         }
       }  
-
-      this.getOpenBorders();
-    }
-  }
-
-  getOpenBorders() {
-    // get the tiles that are:
-    //    0 in collisionLayer.data AND
-    //    (on the top/bottom edge) OR (on the left/right edge)
-    
-    // top edge is      0 <= i < width
-    // left edge is     i % width == 0
-    // bottom edge is   width * (height - 1) < i < width * height
-    // right edge is    i % width = width - 1
-
-    // top
-    for (var i = 0; i < this.collisionLayer.width; i++)
-    {
-      if(this.collisionLayer.data[i] == 0) {
-        this.openBorderTiles.push(i);
-      }
-    }
-
-    // left
-    for (var i = 0; i < this.collisionLayer.width * this.collisionLayer.height 
-      && this.collisionLayer.data[i] == 0; i += this.collisionLayer.width)
-    {
-      this.openBorderTiles.push(i);
-    }
-
-    // bottom
-    for (var i = this.collisionLayer.width * this.collisionLayer.height - this.collisionLayer.width;
-        i < this.collisionLayer.width * this.collisionLayer.height && this.collisionLayer.data[i] == 0; i++)
-    {
-      this.openBorderTiles.push(i);
-    }
-
-    // right
-    for (var i = this.collisionLayer.width - 1; i < this.collisionLayer.width * this.collisionLayer.height 
-      && this.collisionLayer.data[i] == 0; i += this.collisionLayer.width)
-    {
-      this.openBorderTiles.push(i);
     }
   }
 
@@ -372,27 +335,26 @@ class Stage {
 
   draw(ctx: CanvasRenderingContext2D, panX: number, panY: number, pixelSize: number) {
     this.pixelSize = pixelSize;
-    for (var i = 0; i < this.collisionLayer.width * this.collisionLayer.height; i++)
-    {
-        let currentColumn: number = i % this.collisionLayer.width;
-        let currentRow: number = Math.floor(i / this.collisionLayer.width);
 
-        if(this.openBorderTiles.includes(i)){
+    for(let w = 0; w < this.collisionLayer.width; w++) {
+      for(let h = 0; h < this.collisionLayer.height; h++) {
+        if(h == 0 || w == 0 || h == this.collisionLayer.height - 1 || w == this.collisionLayer.width - 1) {
           ctx.fillStyle = "green";
-        } else if (this.collisionLayer.data[i] - 1 != -1) {
+        } else if(this.dataMap[w][h] != 0) {
           ctx.fillStyle = "grey";
         } else {
           continue;
         }
 
-        ctx.fillRect(this.x * pixelSize + currentColumn * pixelSize - panX, this.y * pixelSize + currentRow * pixelSize - panY, pixelSize, pixelSize);
+        ctx.fillRect(this.x * pixelSize + w * pixelSize - panX,
+           this.y * pixelSize + h * pixelSize - panY, pixelSize, pixelSize);
+      }
     }
-
 
     ctx.fillText(
       `${this.name} (${this.x}, ${this.y})`,
-      this.x + this.width * this.pixelSize * 0.5 - panX,
-      this.y + this.height * this.pixelSize * 0.5 - panY,
+      this.x * pixelSize + this.width * this.pixelSize * 0.5 - panX,
+      this.y * pixelSize + this.height * this.pixelSize * 0.5 - panY,
       this.width
     );
     
