@@ -120,10 +120,10 @@ export class WorldMapComponent implements OnInit {
       box = this.boxArray[i];
       
       
-      xMin = box.x - this.panX;
-      xMax = box.x + box.width - this.panX;
-      yMin = box.y - this.panY;
-      yMax = box.y + box.height - this.panY;
+      xMin = box.x * this.gridSize - this.panX;
+      xMax = box.x * this.gridSize + box.width * this.gridSize - this.panX;
+      yMin = box.y * this.gridSize - this.panY;
+      yMax = box.y * this.gridSize + box.height * this.gridSize - this.panY;
       // if box is within vision, draw it
       if (xMax > 0 && xMin < this.canvas.nativeElement.offsetWidth && yMax > 0 && yMin < this.canvas.nativeElement.offsetHeight) {
         this.ctx.fillStyle = this.pixelColor;
@@ -161,9 +161,53 @@ export class WorldMapComponent implements OnInit {
       } else {
         this.selectedBox.x = this.roundToNearest(this.mouseX - this.selectOffsetX + this.panX, this.gridSize) / this.gridSize;
         this.selectedBox.y = this.roundToNearest(this.mouseY - this.selectOffsetY + this.panY, this.gridSize) / this.gridSize;
+        this.selectedBox.postMove();
+
+        // check adjacency
+        for (var i = 0; i < this.boxArray.length; ++i) {
+          if(this.boxArray[i] === this.selectedBox) {
+            continue;
+          }
+
+          if(!((this.selectedBox.y <= this.boxArray[i].y && 
+                this.selectedBox.y + this.selectedBox.height <= this.boxArray[i].y) ||
+              (this.selectedBox.y >= this.boxArray[i].y + this.boxArray[i].height && 
+                this.selectedBox.y + this.selectedBox.height >= this.boxArray[i].y + this.boxArray[i].height))) {
+            
+            if(this.selectedBox.x + this.selectedBox.width == this.boxArray[i].x) {
+              this.selectedBox.adjacentStagesRight.push(this.boxArray[i]);
+            } else if(this.selectedBox.x == this.boxArray[i].x + this.boxArray[i].width) {
+              this.selectedBox.adjacentStagesLeft.push(this.boxArray[i]);
+            }
+          } else if(!((this.selectedBox.x <= this.boxArray[i].x &&
+            this.selectedBox.x + this.selectedBox.width <= this.boxArray[i].x) ||
+            (this.selectedBox.x >= this.boxArray[i].x + this.boxArray[i].width &&
+              this.selectedBox.x + this.selectedBox.width >= this.boxArray[i].x + this.boxArray[i].width))){
+
+            if(this.selectedBox.y + this.selectedBox.height == this.boxArray[i].y) {
+              this.selectedBox.adjacentStagesBottom.push(this.boxArray[i]);
+            } else if(this.selectedBox.y == this.boxArray[i].y + this.boxArray[i].height) {
+              this.selectedBox.adjacentStagesTop.push(this.boxArray[i]);
+            }
+          } 
+        }
+
       }
       requestAnimationFrame(this.draw.bind(this));
-    } 
+    } else {
+      for (var i = this.boxArray.length - 1; i > -1; --i) {
+        let hoveredBox: Stage = this.boxArray[i];
+        if (this.boxArray[i].isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
+          hoveredBox.isHovered = true;
+          hoveredBox.hover();
+
+        } else {
+          hoveredBox.isHovered = false;
+          hoveredBox.unhover();
+        }
+      }
+      requestAnimationFrame(this.draw.bind(this));
+    }
 
     this.oldMouseX = this.mouseX;
     this.oldMouseY = this.mouseY;  
@@ -270,6 +314,7 @@ class Stage {
   y: number;
   width: number;
   height: number;
+  isHovered: boolean;
   isSelected: boolean;
 
   pixelSize: number;
@@ -279,9 +324,28 @@ class Stage {
 
   dataMap: number[][] = [];
   openBorderTiles: [number, number][] = [];
-  
+  translatedOpenBorderTiles: [number, number][] = [];
+
+  adjacentStagesRight: Stage[];
+  adjacentStagesLeft: Stage[];
+  adjacentStagesBottom: Stage[];
+  adjacentStagesTop: Stage[];
+
   // open borders that are adjacent to another stage's open borders
   openBorderCrossings: [number, number][] = [];
+
+  // colors
+  outlineColor: string = 'rgba(63, 191, 191, 0.25)';
+  defaultOutlineColor: string = 'rgba(63, 191, 191, 0.25)'
+  highlightOutlineColor: string = 'rgba(63, 191, 191, 0.7)'
+
+  openBorderColor: string = 'rgba(127, 191, 63, 0.25)'
+  defaultOpenBorderColor: string = 'rgba(127, 191, 63, 0.25)'
+  highlightOpenBorderColor: string = 'rgba(127, 191, 63, 0.6)'
+
+  borderCrossingColor: string = 'rgba(127, 191, 63, 1)'
+  defaultBorderCrossingColor: string = 'rgba(127, 191, 63, 1)'
+  highlightBorderCrossingColor: string = 'rgba(127, 191, 63, 1)'
  
   constructor(x: number, y: number, width: number, height: number, pixelSize: number, data: StageModel) {
     this.x = x / pixelSize;
@@ -319,9 +383,51 @@ class Stage {
     }
   }
 
-  compareOpenBorders(otherOpenBorders: number[]) {
-
+  hover() {
+    this.outlineColor = this.highlightOutlineColor;
+    this.openBorderColor = this.highlightOpenBorderColor;
   }
+
+  unhover() {
+    this.outlineColor = this.defaultOutlineColor;
+    this.openBorderColor = this.defaultOpenBorderColor;
+  }
+
+  postMove() {
+    this.adjacentStagesRight = [];
+    this.adjacentStagesLeft = [];
+    this.adjacentStagesBottom = [];
+    this.adjacentStagesTop = [];
+
+    this.translatedOpenBorderTiles = [];
+    for(let tile of this.openBorderTiles) {
+      let translatedTile: [number, number] = [tile[0] + this.x, tile[1] + this.y]
+      this.translatedOpenBorderTiles.push(translatedTile);
+    }
+  }
+
+  untranslateTile(tile: [number, number]): [number, number] {
+    return [tile[0] - this.x, tile[1] - this.y];
+  }
+
+  compareOpenBorders() {    
+    // right adj tiles are adjacent if other.x = this.x + 1
+    // left adj : other.x = this.x - 1
+    // bottom adj: other.y = this.y + 1
+    // top adj: other.y = this.y - 1
+
+    for(let stage of this.adjacentStagesRight) {
+      // let other: [number, number][] = Object.assign([], stage.translatedOpenBorderTiles);
+      for(let myTile of this.translatedOpenBorderTiles) {
+        for(let otherTile of stage.translatedOpenBorderTiles) {
+          if(otherTile[0] == myTile[0] + 1) {
+            // add to graph
+          }
+        }
+      }      
+    }
+  }
+
 
   isCollidingWithPoint(x: number, y: number) {
     return (x > this.x * this.pixelSize && x < this.x * this.pixelSize + this.width * this.pixelSize) 
@@ -338,16 +444,20 @@ class Stage {
 
     for(let w = 0; w < this.collisionLayer.width; w++) {
       for(let h = 0; h < this.collisionLayer.height; h++) {
-        if(h == 0 || w == 0 || h == this.collisionLayer.height - 1 || w == this.collisionLayer.width - 1) {
-          ctx.fillStyle = "green";
-        } else if(this.dataMap[w][h] != 0) {
+        if(this.dataMap[w][h] != 0) {
           ctx.fillStyle = "grey";
-        } else {
-          continue;
+          ctx.fillRect(this.x * pixelSize + w * pixelSize - panX,
+            this.y * pixelSize + h * pixelSize - panY, pixelSize, pixelSize);
+        }  
+        if(h == 0 || w == 0 || h == this.collisionLayer.height - 1 || w == this.collisionLayer.width - 1) {
+          if(this.dataMap[w][h] == 0) {
+            ctx.fillStyle = this.openBorderColor;
+          } else {
+            ctx.fillStyle = this.outlineColor;          
+          }
+          ctx.fillRect(this.x * pixelSize + w * pixelSize - panX,
+            this.y * pixelSize + h * pixelSize - panY, pixelSize, pixelSize);          
         }
-
-        ctx.fillRect(this.x * pixelSize + w * pixelSize - panX,
-           this.y * pixelSize + h * pixelSize - panY, pixelSize, pixelSize);
       }
     }
 
