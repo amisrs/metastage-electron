@@ -19,9 +19,14 @@ export class AppComponent implements OnInit {
   
   divElement: ElementRef;
   addStage: StageModel;
+  path: string;
 
-  receiveAddStageFromStageList(data) {
+  receiveAddStageFromStageList(data: StageModel) {
     this.addStage = data;
+  }
+
+  receiveSaveClickEvent(path: string) {
+    this.path = path;
   }
 
   ngOnInit() {

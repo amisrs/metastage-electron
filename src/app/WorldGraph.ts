@@ -1,37 +1,47 @@
+import { Stage } from '../app/Stage';
 // Directed graph representing stages and connections between stages
 //
 // edge = (target node, [ coordinates of crossing tiles ])
 
 export class WorldGraph {
-    adjacencyMap: Map<string, Map<string, [number, number][]>>;
+    // adjacencyMap: Map<string, StageInfo>;
+    adjacencyMap;
 
     constructor() {
-        this.adjacencyMap = new Map<string, Map<string, [number, number][]>>();
+        // this.adjacencyMap = new Map<string, StageInfo>();
+        this.adjacencyMap = {};
     }
 
-    addVertex(name: string) {
-        this.adjacencyMap.set(name, new Map<string, [number, number][]>());
+    addVertex(stage: Stage) {
+        // this.adjacencyMap.set(stage.name, new StageInfo(stage.x, stage.y));
+        this.adjacencyMap[stage.name] = new StageInfo(stage.x, stage.y);
     }
 
-    addEdge(source: string, target: string, tiles: [number, number][]) {
-        if(this.adjacencyMap.get(source).has(target)) {
+    addEdge(source: Stage, target: Stage, tiles: [number, number][]) {
+        if(this.adjacencyMap[source.name].adjacents[target.name]) {
             // edge already exists, you should be using modifyEdge
         }
-        this.adjacencyMap.get(source).set(target, tiles);
+        this.adjacencyMap[source.name].adjacents[target.name] = tiles;
     }
 
     // deleteNode(name: string) 
 
-    deleteEdge(source: string, target: string) {
-        this.adjacencyMap.get(source).delete(target);
+    deleteEdge(source: Stage, target: Stage) {
+        delete this.adjacencyMap[source.name].adjacents[target.name];
     }
 
-    deleteAllEdgesByVertex(source: string) {
-        this.adjacencyMap.get(source).clear();
+    deleteAllEdgesByVertex(source: Stage) {
+        this.adjacencyMap[source.name].adjacents = {};
     }
 
-    modifyEdge(source: string, target: string, tiles: [number, number][]) {
-        this.adjacencyMap.get(source).set(target, tiles);
+    modifyEdge(source: Stage, target: Stage, tiles: [number, number][]) {
+        this.adjacencyMap[source.name].adjacents[target.name] = tiles;
+    }
+
+    updateStageInfo(stage: Stage) {
+        let toUpdate: StageInfo = this.adjacencyMap[stage.name];
+        toUpdate.x = stage.x;
+        toUpdate.y = stage.y;
     }
 
     V(): number {
@@ -41,12 +51,31 @@ export class WorldGraph {
     E(): number {
         let n: number = 0;
         for(let vertex of this.adjacencyMap) {
-            n += vertex[1].size;
+            n += this.adjacencyMap[vertex].adjacents.size;
         }
 
         return n;
     }
 
-    // serialise()
+    serialise(): string {
+        let json: string = JSON.stringify(this.adjacencyMap);
+        console.log(json);
+        return json;        
+    }
+ 
+}
 
+class StageInfo {
+    x: number;
+    y: number;
+
+    // adjacents: Map<string, [number, number][]>;
+    adjacents;
+
+    constructor(x: number = 0, y: number = 0) {
+        this.x = 0;
+        this.y = 0
+        // this.adjacents = new Map<string, [number, number][]>();
+        this.adjacents = {};
+    }
 }

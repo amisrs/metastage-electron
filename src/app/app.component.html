@@ -10,12 +10,12 @@
       </as-split-area>
     </as-split> -->
     <div class="w-25">
-          <app-map-bar (addStageToWorldMap)="receiveAddStageFromStageList($event)"></app-map-bar>
+          <app-map-bar (addStageToWorldMap)="receiveAddStageFromStageList($event)" (sendSaveClickEvent)="receiveSaveClickEvent($event)"></app-map-bar>
     </div>
     <div class="hide-overflow flex-fill"#mapDiv>
         <app-world-map [addStage]="addStage" [divElement]="divElement" [divWidth]="divElement.nativeElement.offsetWidth" 
         [divHeight]="divElement.nativeElement.offsetHeight" [topPosition]="divElement.nativeElement.getBoundingClientRect().top" 
-        [leftPosition]="divElement.nativeElement.getBoundingClientRect().left" class="world-map"></app-world-map>
+        [leftPosition]="divElement.nativeElement.getBoundingClientRect().left" [path]="path" class="world-map"></app-world-map>
     </div>
   </div>
 

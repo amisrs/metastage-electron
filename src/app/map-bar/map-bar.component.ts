@@ -16,6 +16,7 @@ export class MapBarComponent implements OnInit  {
 
   constructor() { }
 
+
   // events going to stagelist
   @ViewChild(StagelistComponent)
   stagelistComponent: StagelistComponent;
@@ -31,10 +32,16 @@ export class MapBarComponent implements OnInit  {
   // events coming from stagelist
   clickedStage: StageModel;
   @Output() addStageToWorldMap = new EventEmitter<StageModel>();
-  
   _addStageToWorldMap(data: StageModel) {
     this.addStageToWorldMap.emit(data)
   }
+
+  @Output() sendSaveClickEvent = new EventEmitter<string>();
+  _sendSaveClickEvent() {
+    this.sendSaveClickEvent.emit(this.stagelistComponent.levelsFolder.join());
+    alert(`Saving to ${this.stagelistComponent.levelsFolder.join()}`);
+  }
+
 
 
   receiveClickedStageFromStageList(data) {
