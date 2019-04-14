@@ -222,6 +222,8 @@ export class WorldMapComponent implements OnInit {
             continue;
           }
 
+          let isAdjacent: boolean = false;
+
           let isInsideY: boolean = !((this.selectedBox.y <= stage.y && 
             this.selectedBox.y + this.selectedBox.height <= stage.y) ||
           (this.selectedBox.y >= stage.y + stage.height && 
@@ -233,20 +235,29 @@ export class WorldMapComponent implements OnInit {
 
           if(isInsideY) {
             if(this.selectedBox.x + this.selectedBox.width == stage.x) {
-              this.selectedBox.adjacentStagesRight.push(stage);
-              this.selectedBox.adjacentStages.push(stage);
+              // this.selectedBox.adjacentStagesRight.push(stage);
+              isAdjacent = true;
             } else if(this.selectedBox.x == stage.x + stage.width) {
-              this.selectedBox.adjacentStagesLeft.push(stage);
-              this.selectedBox.adjacentStages.push(stage);
+              // this.selectedBox.adjacentStagesLeft.push(stage);
+              isAdjacent = true;
             }
           } else if(isInsideX){
             if(this.selectedBox.y + this.selectedBox.height == stage.y) {
-              this.selectedBox.adjacentStagesBottom.push(stage);
-              this.selectedBox.adjacentStages.push(stage);
+              // this.selectedBox.adjacentStagesBottom.push(stage);
+              isAdjacent = true;
             } else if(this.selectedBox.y == stage.y + stage.height) {
-              this.selectedBox.adjacentStagesTop.push(stage);
-              this.selectedBox.adjacentStages.push(stage);
+              // this.selectedBox.adjacentStagesTop.push(stage);
+              isAdjacent = true;
             }
+          }
+
+          if(isAdjacent) {
+            this.selectedBox.adjacentStages.push(stage);
+            // stage.adjacentStages.push(this.selectedBox);
+          } else {
+            // if(stage.adjacentStages.includes(this.selectedBox)) {
+            //   stage.adjacentStages.splice(stage.adjacentStages.indexOf(this.selectedBox), 1);
+            // }
           }          
         }
         this.worldGraph.deleteAllEdgesByVertex(this.selectedBox);
