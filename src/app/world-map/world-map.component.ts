@@ -31,9 +31,11 @@ export class WorldMapComponent implements OnInit {
   // where did you click the box in relation to its center
   selectOffsetX: number;
   selectOffsetY: number;
+
   mouseHeld: boolean;
   selectedBox: Stage;
-  boxArray: Stage[] = [];
+  // boxArray: Stage[] = [];
+  stageMap: Map<string, Stage> = new Map<string, Stage>();
 
   panX: number = 0;
   panY: number = 0;
@@ -64,7 +66,8 @@ export class WorldMapComponent implements OnInit {
   set addStage (addStage: StageModel) {
     alert(`Adding ${addStage.filename}`);
     this.worldGraph.addVertex(addStage.filename);
-    this.boxArray.push(new Stage(0, 0, addStage.width, addStage.height, this.gridSize, addStage));
+    // this.boxArray.push(new Stage(0, 0, addStage.width, addStage.height, this.gridSize, addStage));
+    this.stageMap.set(addStage.filename, new Stage(0, 0, addStage.width, addStage.height, this.gridSize, addStage));
     this.draw();
   }
 
@@ -120,36 +123,58 @@ export class WorldMapComponent implements OnInit {
       this.ctx.stroke();
     }
 
-    for (var i = 0; i < this.boxArray.length; ++i) {
-      box = this.boxArray[i];
-      
-      
-      xMin = box.x * this.gridSize - this.panX;
-      xMax = box.x * this.gridSize + box.width * this.gridSize - this.panX;
-      yMin = box.y * this.gridSize - this.panY;
-      yMax = box.y * this.gridSize + box.height * this.gridSize - this.panY;
+    for(let [name, stage] of this.stageMap) {
+      xMin = stage.x * this.gridSize - this.panX;
+      xMax = stage.x * this.gridSize + stage.width * this.gridSize - this.panX;
+      yMin = stage.y * this.gridSize - this.panY;
+      yMax = stage.y * this.gridSize + stage.height * this.gridSize - this.panY;
       // if box is within vision, draw it
       if (xMax > 0 && xMin < this.canvas.nativeElement.offsetWidth && yMax > 0 && yMin < this.canvas.nativeElement.offsetHeight) {
         this.ctx.fillStyle = this.pixelColor;
-        box.draw(this.ctx, this.panX, this.panY, this.gridSize);
+        stage.draw(this.ctx, this.panX, this.panY, this.gridSize);
       }
     }
+    // for (var i = 0; i < this.boxArray.length; ++i) {
+    //   box = stage;
+      
+      
+    //   xMin = box.x * this.gridSize - this.panX;
+    //   xMax = box.x * this.gridSize + box.width * this.gridSize - this.panX;
+    //   yMin = box.y * this.gridSize - this.panY;
+    //   yMax = box.y * this.gridSize + box.height * this.gridSize - this.panY;
+    //   // if box is within vision, draw it
+    //   if (xMax > 0 && xMin < this.canvas.nativeElement.offsetWidth && yMax > 0 && yMin < this.canvas.nativeElement.offsetHeight) {
+    //     this.ctx.fillStyle = this.pixelColor;
+    //     box.draw(this.ctx, this.panX, this.panY, this.gridSize);
+    //   }
+    // }
   }
 
   onMouseDown(e: MouseEvent) {
     this.mouseHeld = true;
     console.log(`Click point: (${this.mouseX + this.panX}, ${this.mouseY + this.panY})`);
     if (!this.selectedBox) {
-      for (var i = this.boxArray.length - 1; i > -1; --i) {
-        if (this.boxArray[i].isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
-          this.selectedBox = this.boxArray[i];
+      for(let [name, stage] of this.stageMap) {
+        if (stage.isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
+          this.selectedBox = stage;
           this.selectedBox.isSelected = true;
           this.selectOffsetX = this.mouseX - this.selectedBox.x * this.gridSize + this.panX;
           this.selectOffsetY = this.mouseY - this.selectedBox.y * this.gridSize+ this.panY; 
           requestAnimationFrame(this.draw.bind(this));
           return;
         }
+
       }
+      // for (var i = this.boxArray.length - 1; i > -1; --i) {
+      //   if (stage.isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
+      //     this.selectedBox = stage;
+      //     this.selectedBox.isSelected = true;
+      //     this.selectOffsetX = this.mouseX - this.selectedBox.x * this.gridSize + this.panX;
+      //     this.selectOffsetY = this.mouseY - this.selectedBox.y * this.gridSize+ this.panY; 
+      //     requestAnimationFrame(this.draw.bind(this));
+      //     return;
+      //   }
+      // }
     }
   }
 
@@ -165,38 +190,41 @@ export class WorldMapComponent implements OnInit {
       } else {
         this.selectedBox.x = this.roundToNearest(this.mouseX - this.selectOffsetX + this.panX, this.gridSize) / this.gridSize;
         this.selectedBox.y = this.roundToNearest(this.mouseY - this.selectOffsetY + this.panY, this.gridSize) / this.gridSize;
-        this.selectedBox.postMove();
+        let oldAdjacents: Stage[] = this.selectedBox.postMove();
 
         // check adjacency
-        for (var i = 0; i < this.boxArray.length; ++i) {
-          if(this.boxArray[i] === this.selectedBox) {
+        for(let [name, stage] of this.stageMap) {
+
+        // }
+        // for (var i = 0; i < this.boxArray.length; ++i) {
+          if(stage === this.selectedBox) {
             continue;
           }
 
-          let isInsideY: boolean = !((this.selectedBox.y <= this.boxArray[i].y && 
-            this.selectedBox.y + this.selectedBox.height <= this.boxArray[i].y) ||
-          (this.selectedBox.y >= this.boxArray[i].y + this.boxArray[i].height && 
-            this.selectedBox.y + this.selectedBox.height >= this.boxArray[i].y + this.boxArray[i].height))
-          let isInsideX: boolean = !((this.selectedBox.x <= this.boxArray[i].x &&
-            this.selectedBox.x + this.selectedBox.width <= this.boxArray[i].x) ||
-            (this.selectedBox.x >= this.boxArray[i].x + this.boxArray[i].width &&
-              this.selectedBox.x + this.selectedBox.width >= this.boxArray[i].x + this.boxArray[i].width))
+          let isInsideY: boolean = !((this.selectedBox.y <= stage.y && 
+            this.selectedBox.y + this.selectedBox.height <= stage.y) ||
+          (this.selectedBox.y >= stage.y + stage.height && 
+            this.selectedBox.y + this.selectedBox.height >= stage.y + stage.height))
+          let isInsideX: boolean = !((this.selectedBox.x <= stage.x &&
+            this.selectedBox.x + this.selectedBox.width <= stage.x) ||
+            (this.selectedBox.x >= stage.x + stage.width &&
+              this.selectedBox.x + this.selectedBox.width >= stage.x + stage.width))
 
           if(isInsideY) {
-            if(this.selectedBox.x + this.selectedBox.width == this.boxArray[i].x) {
-              this.selectedBox.adjacentStagesRight.push(this.boxArray[i]);
-              this.selectedBox.adjacentStages.push(this.boxArray[i]);
-            } else if(this.selectedBox.x == this.boxArray[i].x + this.boxArray[i].width) {
-              this.selectedBox.adjacentStagesLeft.push(this.boxArray[i]);
-              this.selectedBox.adjacentStages.push(this.boxArray[i]);
+            if(this.selectedBox.x + this.selectedBox.width == stage.x) {
+              this.selectedBox.adjacentStagesRight.push(stage);
+              this.selectedBox.adjacentStages.push(stage);
+            } else if(this.selectedBox.x == stage.x + stage.width) {
+              this.selectedBox.adjacentStagesLeft.push(stage);
+              this.selectedBox.adjacentStages.push(stage);
             }
           } else if(isInsideX){
-            if(this.selectedBox.y + this.selectedBox.height == this.boxArray[i].y) {
-              this.selectedBox.adjacentStagesBottom.push(this.boxArray[i]);
-              this.selectedBox.adjacentStages.push(this.boxArray[i]);
-            } else if(this.selectedBox.y == this.boxArray[i].y + this.boxArray[i].height) {
-              this.selectedBox.adjacentStagesTop.push(this.boxArray[i]);
-              this.selectedBox.adjacentStages.push(this.boxArray[i]);
+            if(this.selectedBox.y + this.selectedBox.height == stage.y) {
+              this.selectedBox.adjacentStagesBottom.push(stage);
+              this.selectedBox.adjacentStages.push(stage);
+            } else if(this.selectedBox.y == stage.y + stage.height) {
+              this.selectedBox.adjacentStagesTop.push(stage);
+              this.selectedBox.adjacentStages.push(stage);
             }
           }          
         }
@@ -205,21 +233,22 @@ export class WorldMapComponent implements OnInit {
         let newEdges = this.selectedBox.calculateOpenBorderCrossings();
         for(let edge of newEdges) {
           this.worldGraph.addEdge(edge[0], edge[1], edge[2]);
-          // stageMap.get(edge[1]).calculateOpenBorderCrossings();
-        } 
+        }
+        for(let stage of oldAdjacents) {
+          stage.calculateOpenBorderCrossings(); 
+        }
 
       }
       requestAnimationFrame(this.draw.bind(this));
     } else {
-      for (var i = this.boxArray.length - 1; i > -1; --i) {
-        let hoveredBox: Stage = this.boxArray[i];
-        if (this.boxArray[i].isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
-          hoveredBox.isHovered = true;
-          hoveredBox.hover();
+      for(let [name, stage] of this.stageMap) {
+        if (stage.isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
+          stage.isHovered = true;
+          stage.hover();
 
         } else {
-          hoveredBox.isHovered = false;
-          hoveredBox.unhover();
+          stage.isHovered = false;
+          stage.unhover();
         }
       }
       requestAnimationFrame(this.draw.bind(this));
@@ -262,7 +291,6 @@ export class WorldMapComponent implements OnInit {
     this.draw();
   }
 
-  constructor() { }
 
   prepareCanvas() {
     this.background.nativeElement.setAttribute('width', this.divWidth)
@@ -411,7 +439,8 @@ class Stage {
     this.openBorderColor = this.defaultOpenBorderColor;
   }
 
-  postMove() {
+  postMove(): Stage[] {
+    let old: Stage[] = this.adjacentStages;
     this.adjacentStages = [];
     this.adjacentStagesRight = [];
     this.adjacentStagesLeft = [];
@@ -423,6 +452,7 @@ class Stage {
       let translatedTile: [number, number] = [tile[0] + this.x, tile[1] + this.y]
       this.translatedOpenBorderTiles.push(translatedTile);
     }
+    return old;
   }
 
   untranslateTile(tile: [number, number]): [number, number] {
@@ -436,6 +466,7 @@ class Stage {
     // bottom adj: other.y = this.y + 1
     // top adj: other.y = this.y - 1
     let edges: [string, string, [number, number][]][] = [];
+    let oldBorderCrossings = this.openBorderCrossings;
     this.openBorderCrossings = [];
     for(let stage of this.adjacentStages) {
       let tiles: [number, number][] = [];
