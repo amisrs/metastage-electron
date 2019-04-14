@@ -1,6 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit, HostListener, Input } from '@angular/core';
 import { fromEvent } from "rxjs";
 import { StageModel } from './StageModel';
+import { WorldMapComponent } from './world-map/world-map.component';
 
 @Component({
   selector: 'app-root',
@@ -11,7 +12,10 @@ import { StageModel } from './StageModel';
 export class AppComponent implements OnInit {
 
 
-  title = 'metastage';
+  title = 'metastage'; 
+  @ViewChild(WorldMapComponent)
+  worldMapComponent: WorldMapComponent;
+
 
   @ViewChild("mapDiv") mapDiv: ElementRef;
   divHeight: number;
@@ -19,14 +23,21 @@ export class AppComponent implements OnInit {
   
   divElement: ElementRef;
   addStage: StageModel;
+  graph: string;
   path: string;
+  stages: StageModel[];
+
+  receiveStagesFromStagelist(data: [string, StageModel[]]) {
+    this.worldMapComponent.loadStagesInMemory(data[1]);
+    this.worldMapComponent.load(data[0]);
+  }
 
   receiveAddStageFromStageList(data: StageModel) {
     this.addStage = data;
   }
 
   receiveSaveClickEvent(path: string) {
-    this.path = path;
+    this.worldMapComponent.save(path);
   }
 
   ngOnInit() {

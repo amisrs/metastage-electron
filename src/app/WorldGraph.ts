@@ -58,7 +58,7 @@ export class WorldGraph {
     }
 
     serialise(): string {
-        let json: string = JSON.stringify(this.adjacencyMap);
+        let json: string = JSON.stringify(this.adjacencyMap, null, 2);
         console.log(json);
         return json;        
     }

@@ -32,6 +32,8 @@ export class StagelistComponent {
   orderedStages: StageModel[] = [];
   viewList: StageModel[] = [];
 
+  graphJson: string;
+
   // TODO: new files, deleted files
   metastageFileCount: number = 0;
   directoryFileCount: number = 0;
@@ -73,6 +75,12 @@ export class StagelistComponent {
           if(dir.includes('meta_level.txt')) {
             this.fs.readFile(this.levelsFolder.join() + '/meta_level.txt', 'utf8', this.loadMetastage) 
           } 
+
+          if(dir.includes('meta_graph.txt')) {
+            this.fs.readFile(this.levelsFolder.join() + '/meta_graph.txt', 'utf8', (err, data) => {
+              this.graphJson = data;
+            }) 
+          }
           
           let fileReads = dir.map((item) => {
             if(item.endsWith('.json')) { 
@@ -143,7 +151,7 @@ export class StagelistComponent {
     }
 
     console.log(this.orderedStages);
-
+    this._loadStagesToWorldMap(this.orderedStages);
     this.orderedStages.forEach(stage => {
       this._ngZone.run(() => {
         setTimeout( () => {
@@ -151,6 +159,7 @@ export class StagelistComponent {
         },500)
       })
     });
+
   }
 
   save() {
@@ -186,6 +195,11 @@ export class StagelistComponent {
   @Output() addStageToWorldMap = new EventEmitter<StageModel>();
   _addStageToWorldMap(data: StageModel) {
     this.addStageToWorldMap.emit(data)
+  }
+
+  @Output() loadStagesToWorldMap = new EventEmitter<[string, StageModel[]]>();
+  _loadStagesToWorldMap(data: StageModel[]) {
+    this.loadStagesToWorldMap.emit([this.graphJson, data]);
   }
 
   mapContainsValue(map: Map<any, any>, value: any): boolean {

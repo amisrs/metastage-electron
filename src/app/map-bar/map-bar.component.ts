@@ -23,6 +23,7 @@ export class MapBarComponent implements OnInit  {
 
   directoryChange() {
     this.stagelistComponent.directoryChange();
+    
   }
 
   save() {
@@ -42,14 +43,31 @@ export class MapBarComponent implements OnInit  {
     alert(`Saving to ${this.stagelistComponent.levelsFolder.join()}`);
   }
 
+  @Output() loadGraphToWorldMap = new EventEmitter<string>();
+  _loadGraphToWorldMap(json: string) {
+    this.loadGraphToWorldMap.emit(json);
+  }
+
+  @Output() loadStagesToWorldMap = new EventEmitter<[string, StageModel[]]>();
+  _loadStagesToWorldMap(data: [string, StageModel[]]) {
+    this.loadStagesToWorldMap.emit(data);
+  }
 
 
-  receiveClickedStageFromStageList(data) {
+  receiveGraphFromStagelist(json: string) {
+    this._loadGraphToWorldMap(json);
+  }
+
+  receiveClickedStageFromStagelist(data) {
     this.clickedStage = data;
   }
 
   receiveAddStageFromStageList(data) {
     this._addStageToWorldMap(data);
+  }
+
+  receiveStagesFromStagelist(data: [string, StageModel[]]) {
+    this._loadStagesToWorldMap(data);
   }
   
 

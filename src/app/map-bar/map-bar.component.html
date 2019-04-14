@@ -7,7 +7,8 @@
     </div>
               
     <div class="row h-75 stagelist-container scrollbar">
-        <app-stagelist (sendStageToMapPreview)="receiveClickedStageFromStageList($event)" (addStageToWorldMap)="receiveAddStageFromStageList($event)" class="stagelist"></app-stagelist>
+        <app-stagelist (sendStageToMapPreview)="receiveClickedStageFromStagelist($event)" (addStageToWorldMap)="receiveAddStageFromStageList($event)" 
+        (loadGraphToWorldMap)="receiveGraphFromStagelist($event)" (loadStagesToWorldMap)="receiveStagesFromStagelist($event)" class="stagelist"></app-stagelist>
     </div>
     <div class="square-box">
         <app-map-preview [clickedStage]="clickedStage" class="row map-preview square-content" ></app-map-preview>

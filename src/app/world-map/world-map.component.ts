@@ -29,6 +29,8 @@ export class WorldMapComponent implements OnInit {
   @Input() topPosition: number;
   @Input() leftPosition: number;
 
+  // @Input() stages: StageModel[];
+
   bounds: ClientRect;
 
 
@@ -39,7 +41,8 @@ export class WorldMapComponent implements OnInit {
   mouseHeld: boolean;
   selectedBox: Stage;
   // boxArray: Stage[] = [];
-  stageMap: Map<string, Stage> = new Map<string, Stage>();
+  stagesInMemoryMap: Map<string, StageModel> = new Map<string, StageModel>();
+  stagesInWorldMap: Map<string, Stage> = new Map<string, Stage>();
 
   panX: number = 0;
   panY: number = 0;
@@ -72,14 +75,30 @@ export class WorldMapComponent implements OnInit {
     let stage: Stage = new Stage(0, 0, addStage.width, addStage.height, this.gridSize, addStage);
     this.worldGraph.addVertex(stage);
     // this.boxArray.push(new Stage(0, 0, addStage.width, addStage.height, this.gridSize, addStage));
-    this.stageMap.set(addStage.filename, stage);
+    this.stagesInWorldMap.set(addStage.filename, stage);
     this.draw();
     // this.worldGraph.serialise();
   }
 
-  @Input()
-  set path(path: string) {
-    this.save(path);
+  loadStagesInMemory(stages: StageModel[]) {
+    this.stagesInMemoryMap.clear();
+    for(let stage of stages) {
+      this.stagesInMemoryMap.set(stage.filename, stage);
+    }
+  }
+
+  load(json: string) {
+    this.worldGraph.adjacencyMap = Object.assign(new Object(), JSON.parse(json));
+    for(let stageName of Object.keys(this.worldGraph.adjacencyMap)) {
+      let x: number = this.worldGraph.adjacencyMap[stageName].x;
+      let y: number = this.worldGraph.adjacencyMap[stageName].y;
+      let width: number = this.stagesInMemoryMap.get(stageName).width;
+      let height: number = this.stagesInMemoryMap.get(stageName).height;
+      let stage: Stage = new Stage(x * this.gridSize, y * this.gridSize, width, height, this.gridSize, this.stagesInMemoryMap.get(stageName));
+      this.stagesInWorldMap.set(stage.name, stage);
+    }
+    this.draw();
+    // alert(this.worldGraph.serialise());
   }
 
   constructor(private _electronService: ElectronService, private _ngZone: NgZone) {
@@ -149,7 +168,7 @@ export class WorldMapComponent implements OnInit {
       this.ctx.stroke();
     }
 
-    for(let [name, stage] of this.stageMap) {
+    for(let [name, stage] of this.stagesInWorldMap) {
       xMin = stage.x * this.gridSize - this.panX;
       xMax = stage.x * this.gridSize + stage.width * this.gridSize - this.panX;
       yMin = stage.y * this.gridSize - this.panY;
@@ -166,7 +185,7 @@ export class WorldMapComponent implements OnInit {
     this.mouseHeld = true;
     console.log(`Click point: (${this.mouseX + this.panX}, ${this.mouseY + this.panY})`);
     if (!this.selectedBox) {
-      for(let [name, stage] of this.stageMap) {
+      for(let [name, stage] of this.stagesInWorldMap) {
         if (stage.isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
           this.selectedBox = stage;
           this.selectedBox.isSelected = true;
@@ -195,7 +214,7 @@ export class WorldMapComponent implements OnInit {
         let oldAdjacents: Stage[] = this.selectedBox.postMove();
 
         // check adjacency
-        for(let [name, stage] of this.stageMap) {
+        for(let [name, stage] of this.stagesInWorldMap) {
 
         // }
         // for (var i = 0; i < this.boxArray.length; ++i) {
@@ -244,7 +263,7 @@ export class WorldMapComponent implements OnInit {
       }
       requestAnimationFrame(this.draw.bind(this));
     } else {
-      for(let [name, stage] of this.stageMap) {
+      for(let [name, stage] of this.stagesInWorldMap) {
         if (stage.isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
           stage.isHovered = true;
           stage.hover();
