@@ -3,6 +3,7 @@ import { fromEvent } from "rxjs";
 import { Observable } from "rxjs";
 import { Subscription } from "rxjs";
 import { StageModel, StageLayerModel } from '../StageModel';
+import { WorldGraph } from '../WorldGraph';
 
 // https://stackoverflow.com/questions/47371623/html-infinite-pan-able-canvas
 @Component({
@@ -56,10 +57,13 @@ export class WorldMapComponent implements OnInit {
   gridColor: string = "rgba(111, 115, 118, 1)";
   mapColor: string = "rgba(32, 34, 37, 1)";
   pixelColor: string = "rgba(166, 166, 166, 1)";
+  
+  worldGraph: WorldGraph = new WorldGraph();
 
   @Input() 
   set addStage (addStage: StageModel) {
     alert(`Adding ${addStage.filename}`);
+    this.worldGraph.addVertex(addStage.filename);
     this.boxArray.push(new Stage(0, 0, addStage.width, addStage.height, this.gridSize, addStage));
     this.draw();
   }
@@ -169,28 +173,40 @@ export class WorldMapComponent implements OnInit {
             continue;
           }
 
-          if(!((this.selectedBox.y <= this.boxArray[i].y && 
-                this.selectedBox.y + this.selectedBox.height <= this.boxArray[i].y) ||
-              (this.selectedBox.y >= this.boxArray[i].y + this.boxArray[i].height && 
-                this.selectedBox.y + this.selectedBox.height >= this.boxArray[i].y + this.boxArray[i].height))) {
-            
-            if(this.selectedBox.x + this.selectedBox.width == this.boxArray[i].x) {
-              this.selectedBox.adjacentStagesRight.push(this.boxArray[i]);
-            } else if(this.selectedBox.x == this.boxArray[i].x + this.boxArray[i].width) {
-              this.selectedBox.adjacentStagesLeft.push(this.boxArray[i]);
-            }
-          } else if(!((this.selectedBox.x <= this.boxArray[i].x &&
+          let isInsideY: boolean = !((this.selectedBox.y <= this.boxArray[i].y && 
+            this.selectedBox.y + this.selectedBox.height <= this.boxArray[i].y) ||
+          (this.selectedBox.y >= this.boxArray[i].y + this.boxArray[i].height && 
+            this.selectedBox.y + this.selectedBox.height >= this.boxArray[i].y + this.boxArray[i].height))
+          let isInsideX: boolean = !((this.selectedBox.x <= this.boxArray[i].x &&
             this.selectedBox.x + this.selectedBox.width <= this.boxArray[i].x) ||
             (this.selectedBox.x >= this.boxArray[i].x + this.boxArray[i].width &&
-              this.selectedBox.x + this.selectedBox.width >= this.boxArray[i].x + this.boxArray[i].width))){
+              this.selectedBox.x + this.selectedBox.width >= this.boxArray[i].x + this.boxArray[i].width))
 
+          if(isInsideY) {
+            if(this.selectedBox.x + this.selectedBox.width == this.boxArray[i].x) {
+              this.selectedBox.adjacentStagesRight.push(this.boxArray[i]);
+              this.selectedBox.adjacentStages.push(this.boxArray[i]);
+            } else if(this.selectedBox.x == this.boxArray[i].x + this.boxArray[i].width) {
+              this.selectedBox.adjacentStagesLeft.push(this.boxArray[i]);
+              this.selectedBox.adjacentStages.push(this.boxArray[i]);
+            }
+          } else if(isInsideX){
             if(this.selectedBox.y + this.selectedBox.height == this.boxArray[i].y) {
               this.selectedBox.adjacentStagesBottom.push(this.boxArray[i]);
+              this.selectedBox.adjacentStages.push(this.boxArray[i]);
             } else if(this.selectedBox.y == this.boxArray[i].y + this.boxArray[i].height) {
               this.selectedBox.adjacentStagesTop.push(this.boxArray[i]);
+              this.selectedBox.adjacentStages.push(this.boxArray[i]);
             }
-          } 
+          }          
         }
+        this.worldGraph.deleteAllEdgesByVertex(this.selectedBox.name);
+
+        let newEdges = this.selectedBox.calculateOpenBorderCrossings();
+        for(let edge of newEdges) {
+          this.worldGraph.addEdge(edge[0], edge[1], edge[2]);
+          // stageMap.get(edge[1]).calculateOpenBorderCrossings();
+        } 
 
       }
       requestAnimationFrame(this.draw.bind(this));
@@ -326,6 +342,7 @@ class Stage {
   openBorderTiles: [number, number][] = [];
   translatedOpenBorderTiles: [number, number][] = [];
 
+  adjacentStages: Stage[];
   adjacentStagesRight: Stage[];
   adjacentStagesLeft: Stage[];
   adjacentStagesBottom: Stage[];
@@ -339,9 +356,9 @@ class Stage {
   defaultOutlineColor: string = 'rgba(63, 191, 191, 0.25)'
   highlightOutlineColor: string = 'rgba(63, 191, 191, 0.7)'
 
-  openBorderColor: string = 'rgba(127, 191, 63, 0.25)'
-  defaultOpenBorderColor: string = 'rgba(127, 191, 63, 0.25)'
-  highlightOpenBorderColor: string = 'rgba(127, 191, 63, 0.6)'
+  openBorderColor: string = 'rgba(191, 191, 63, 0.25)'
+  defaultOpenBorderColor: string = 'rgba(191, 191, 63, 0.25)'
+  highlightOpenBorderColor: string = 'rgba(191, 191, 63, 0.6)'
 
   borderCrossingColor: string = 'rgba(127, 191, 63, 1)'
   defaultBorderCrossingColor: string = 'rgba(127, 191, 63, 1)'
@@ -373,7 +390,8 @@ class Stage {
             this.dataMap[w][h] = this.collisionLayer.data[h * this.collisionLayer.width + w];
             
             // check for open borders
-            if(h == 0 || w == 0 || h == this.collisionLayer.height - 1 || w == this.collisionLayer.width - 1) {
+            if(this.dataMap[w][h] == 0 && (h == 0 || w == 0 ||
+               h == this.collisionLayer.height - 1 || w == this.collisionLayer.width - 1)) {
               // it's gonna push the corners twice but shouldn't matter
               this.openBorderTiles.push([w, h])
             }
@@ -394,6 +412,7 @@ class Stage {
   }
 
   postMove() {
+    this.adjacentStages = [];
     this.adjacentStagesRight = [];
     this.adjacentStagesLeft = [];
     this.adjacentStagesBottom = [];
@@ -410,22 +429,39 @@ class Stage {
     return [tile[0] - this.x, tile[1] - this.y];
   }
 
-  compareOpenBorders() {    
+  calculateOpenBorderCrossings(): [string, string, [number, number][]][] {
+    // return a bunch of edges    
     // right adj tiles are adjacent if other.x = this.x + 1
     // left adj : other.x = this.x - 1
     // bottom adj: other.y = this.y + 1
     // top adj: other.y = this.y - 1
-
-    for(let stage of this.adjacentStagesRight) {
-      // let other: [number, number][] = Object.assign([], stage.translatedOpenBorderTiles);
+    let edges: [string, string, [number, number][]][] = [];
+    this.openBorderCrossings = [];
+    for(let stage of this.adjacentStages) {
+      let tiles: [number, number][] = [];
       for(let myTile of this.translatedOpenBorderTiles) {
-        for(let otherTile of stage.translatedOpenBorderTiles) {
-          if(otherTile[0] == myTile[0] + 1) {
-            // add to graph
-          }
-        }
-      }      
+        if(this.compareTileAgainstOthers(myTile, stage.translatedOpenBorderTiles)) {
+          tiles.push(this.untranslateTile(myTile));
+          this.openBorderCrossings.push(this.untranslateTile(myTile));
+        }        
+      }
+      if(tiles.length > 0) {
+        edges.push([this.name, stage.name, tiles]);
+      }    
     }
+
+    return edges;
+  }
+
+  // is this tile adjacent to another tile
+  compareTileAgainstOthers(myTile: [number, number], otherTiles: [number, number][]): boolean {
+    for(let otherTile of otherTiles) {
+      if(((otherTile[0] == myTile[0] + 1 || otherTile[0] == myTile[0] - 1) && otherTile[1] == myTile[1]) ||
+         ((otherTile[1] == myTile[1] + 1 || otherTile[1] == myTile[1] - 1) && otherTile[0] == myTile[0])) {
+        return true;
+      }
+    }
+
   }
 
 
@@ -441,6 +477,8 @@ class Stage {
 
   draw(ctx: CanvasRenderingContext2D, panX: number, panY: number, pixelSize: number) {
     this.pixelSize = pixelSize;
+    let crossings = JSON.stringify(this.openBorderCrossings);
+
 
     for(let w = 0; w < this.collisionLayer.width; w++) {
       for(let h = 0; h < this.collisionLayer.height; h++) {
@@ -450,7 +488,10 @@ class Stage {
             this.y * pixelSize + h * pixelSize - panY, pixelSize, pixelSize);
         }  
         if(h == 0 || w == 0 || h == this.collisionLayer.height - 1 || w == this.collisionLayer.width - 1) {
-          if(this.dataMap[w][h] == 0) {
+          let coords: string = JSON.stringify([w, h]);
+          if(crossings.indexOf(coords) != -1) {
+            ctx.fillStyle = this.borderCrossingColor;
+          } else if(this.dataMap[w][h] == 0) {
             ctx.fillStyle = this.openBorderColor;
           } else {
             ctx.fillStyle = this.outlineColor;          
