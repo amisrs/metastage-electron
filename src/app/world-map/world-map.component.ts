@@ -253,11 +253,8 @@ export class WorldMapComponent implements OnInit {
 
           if(isAdjacent) {
             this.selectedBox.adjacentStages.push(stage);
-            // stage.adjacentStages.push(this.selectedBox);
+            stage.adjacentStages.push(this.selectedBox);
           } else {
-            // if(stage.adjacentStages.includes(this.selectedBox)) {
-            //   stage.adjacentStages.splice(stage.adjacentStages.indexOf(this.selectedBox), 1);
-            // }
           }          
         }
         this.worldGraph.deleteAllEdgesByVertex(this.selectedBox);
@@ -267,6 +264,12 @@ export class WorldMapComponent implements OnInit {
         for(let edge of newEdges) {
           this.worldGraph.addEdge(edge[0], edge[1], edge[2]);
         }
+        // compare this.selectedBox.adjacentstages with oldAdjacents, ones in old
+        let onlyInOld: Stage[] = oldAdjacents.filter(this.comparer(this.selectedBox.adjacentStages));
+        for(let notAdjacentAnymore of onlyInOld) {
+          notAdjacentAnymore.adjacentStages.splice(notAdjacentAnymore.adjacentStages.indexOf(this.selectedBox, 1));
+        }
+        
         for(let stage of oldAdjacents) {
           stage.calculateOpenBorderCrossings(); 
         }
@@ -290,6 +293,14 @@ export class WorldMapComponent implements OnInit {
     this.oldMouseX = this.mouseX;
     this.oldMouseY = this.mouseY;  
 
+  }
+
+  comparer(otherArray){
+    return function(current){
+      return otherArray.filter(function(other){
+        return other.value == current.value && other.display == current.display
+      }).length == 0;
+    }
   }
 
   onMouseUp(e: MouseEvent) {

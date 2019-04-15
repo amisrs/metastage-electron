@@ -18,7 +18,7 @@ export class Stage {
     openBorderTiles: [number, number][] = [];
     translatedOpenBorderTiles: [number, number][] = [];
   
-    adjacentStages: Stage[];
+    adjacentStages: Stage[] = [];
     adjacentStagesRight: Stage[];
     adjacentStagesLeft: Stage[];
     adjacentStagesBottom: Stage[];
@@ -75,6 +75,7 @@ export class Stage {
           }
         }  
       }
+      this.postMove();
     }
   
     hover() {
@@ -89,11 +90,8 @@ export class Stage {
   
     postMove(): Stage[] {
       let old: Stage[] = this.adjacentStages;
+      
       this.adjacentStages = [];
-      this.adjacentStagesRight = [];
-      this.adjacentStagesLeft = [];
-      this.adjacentStagesBottom = [];
-      this.adjacentStagesTop = [];
   
       this.translatedOpenBorderTiles = [];
       for(let tile of this.openBorderTiles) {
