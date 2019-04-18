@@ -14,13 +14,16 @@ export class WorldGraph {
 
     addVertex(stage: Stage) {
         // this.adjacencyMap.set(stage.name, new StageInfo(stage.x, stage.y));
-        this.adjacencyMap[stage.name] = new StageInfo(stage.x, stage.y);
+        this.adjacencyMap[stage.name] = new StageInfo(stage.x, -stage.y);
     }
 
     addEdge(source: Stage, target: Stage, tiles: [number, number][]) {
         if(this.adjacencyMap[source.name].adjacents[target.name]) {
             // edge already exists, you should be using modifyEdge
         }
+        tiles = tiles.map(([x, y]): [number, number] => {
+            return [x, -y];            
+        })
         this.adjacencyMap[source.name].adjacents[target.name] = tiles;
     }
 
@@ -41,7 +44,7 @@ export class WorldGraph {
     updateStageInfo(stage: Stage) {
         let toUpdate: StageInfo = this.adjacencyMap[stage.name];
         toUpdate.x = stage.x;
-        toUpdate.y = stage.y;
+        toUpdate.y = -stage.y;
     }
 
     V(): number {

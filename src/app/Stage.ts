@@ -7,6 +7,7 @@ export class Stage {
     height: number;
     isHovered: boolean;
     isSelected: boolean;
+    isMainStage: boolean;
   
     pixelSize: number;
   
@@ -183,7 +184,7 @@ export class Stage {
         `${this.name} (${this.x}, ${this.y})`,
         this.x * pixelSize + this.width * this.pixelSize * 0.5 - panX,
         this.y * pixelSize + this.height * this.pixelSize * 0.5 - panY,
-        this.width
+        this.width * pixelSize
       );
       
     }

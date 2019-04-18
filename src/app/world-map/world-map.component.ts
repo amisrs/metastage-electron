@@ -88,10 +88,12 @@ export class WorldMapComponent implements OnInit {
   }
 
   load(json: string) {
+    // y is inverse, html canvas vs unity
+    // save it in unity correct format, so we need to negate it when loading/saving
     this.worldGraph.adjacencyMap = Object.assign(new Object(), JSON.parse(json));
     for(let stageName of Object.keys(this.worldGraph.adjacencyMap)) {
       let x: number = this.worldGraph.adjacencyMap[stageName].x;
-      let y: number = this.worldGraph.adjacencyMap[stageName].y;
+      let y: number = -this.worldGraph.adjacencyMap[stageName].y;
       let width: number = this.stagesInMemoryMap.get(stageName).width;
       let height: number = this.stagesInMemoryMap.get(stageName).height;
       let stage: Stage = new Stage(x * this.gridSize, y * this.gridSize, width, height, this.gridSize, this.stagesInMemoryMap.get(stageName));
