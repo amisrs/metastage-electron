@@ -160,11 +160,6 @@ export class Stage {
     }
   
   
-    // drag(newX: number, newY: number) {
-    //   this.x = (newX - this.width * this.pixelSize * 0.5) / this.pixelSize;
-    //   this.y = (newY - this.height * this.pixelSize * 0.5) / this.pixelSize;
-    // }
-  
     draw(ctx: CanvasRenderingContext2D, panX: number, panY: number, pixelSize: number) {
       this.pixelSize = pixelSize;
       let crossings = JSON.stringify(this.openBorderCrossings);
