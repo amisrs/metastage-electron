@@ -319,7 +319,7 @@ export class WorldMapComponent implements OnInit {
       if (stage.isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
         let response: ButtonResponse = stage.click((this.mouseX + this.panX) - stage.x * this.gridSize, 
         (this.mouseY + this.panY) - stage.y * this.gridSize, this.panX, this.panY);
-
+        this.handleButtonResponse(response);
 
       }
     }
@@ -328,7 +328,12 @@ export class WorldMapComponent implements OnInit {
   handleButtonResponse(buttonResponse: ButtonResponse) {
     if(buttonResponse.button.type == 'main') {
       // handle setting main stage
-      this.worldGraph.updateStageInfo(buttonResponse.button.parent);
+      for(let [name, stage] of this.stagesInWorldMap) {
+        if(stage != buttonResponse.button.parent) {
+          stage.isMainStage = false;          
+        }
+        this.worldGraph.updateStageInfo(stage);
+      }      
     }
   }
 

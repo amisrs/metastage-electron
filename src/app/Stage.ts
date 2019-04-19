@@ -272,7 +272,6 @@ export class MainButton implements Button {
     
     click(): boolean {
         this.parent.isMainStage = !this.parent.isMainStage;
-
         return this.parent.isMainStage;
     };
 }
