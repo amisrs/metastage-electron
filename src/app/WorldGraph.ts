@@ -45,6 +45,7 @@ export class WorldGraph {
         let toUpdate: StageInfo = this.adjacencyMap[stage.name];
         toUpdate.x = stage.x;
         toUpdate.y = -stage.y;
+        toUpdate.main = stage.isMainStage;
     }
 
     V(): number {
@@ -71,13 +72,15 @@ export class WorldGraph {
 class StageInfo {
     x: number;
     y: number;
+    main: boolean;
 
     // adjacents: Map<string, [number, number][]>;
-    adjacents;
+    adjacents: any;
 
     constructor(x: number = 0, y: number = 0) {
         this.x = 0;
-        this.y = 0
+        this.y = 0;
+        this.main = false;
         // this.adjacents = new Map<string, [number, number][]>();
         this.adjacents = {};
     }

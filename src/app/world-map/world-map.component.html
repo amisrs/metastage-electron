@@ -4,6 +4,6 @@
     <!-- <canvas id="canvas" class="world grid" 
     id='grid'[ngStyle]="{ 'top': topPosition, 'left': leftPosition, 'z-index': 1 }" #grid></canvas> -->
     <canvas id="canvas" class="world map" (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp($event)" 
-    id='map' [ngStyle]="{ 'left': leftPosition, 'top': topPosition,  'z-index': 2 }"
+    (click)="onMouseClick($event)" id='map' [ngStyle]="{ 'left': leftPosition, 'top': topPosition,  'z-index': 2 }"
     (wheel)="onScroll($event)" #map></canvas>
 </div>

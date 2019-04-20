@@ -4,7 +4,7 @@ import { Observable } from "rxjs";
 import { Subscription } from "rxjs";
 import { StageModel, StageLayerModel } from '../StageModel';
 import { WorldGraph } from '../WorldGraph';
-import { Stage } from '../Stage';
+import { Stage, ButtonResponse, MainButton } from '../Stage';
 import { ElectronService } from 'ngx-electron';
 
 // https://stackoverflow.com/questions/47371623/html-infinite-pan-able-canvas
@@ -311,6 +311,24 @@ export class WorldMapComponent implements OnInit {
       this.selectedBox.isSelected = false;
       this.selectedBox = null;
       requestAnimationFrame(this.draw.bind(this));
+    }
+  }
+
+  onMouseClick(e: MouseEvent) {
+    for(let [name, stage] of this.stagesInWorldMap) {
+      if (stage.isCollidingWithPoint(this.mouseX + this.panX,this.mouseY + this.panY)) {
+        let response: ButtonResponse = stage.click((this.mouseX + this.panX) - stage.x * this.gridSize, 
+        (this.mouseY + this.panY) - stage.y * this.gridSize, this.panX, this.panY);
+
+
+      }
+    }
+  }
+
+  handleButtonResponse(buttonResponse: ButtonResponse) {
+    if(buttonResponse.button.type == 'main') {
+      // handle setting main stage
+      this.worldGraph.updateStageInfo(buttonResponse.button.parent);
     }
   }
 

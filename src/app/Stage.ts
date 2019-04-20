@@ -1,4 +1,5 @@
 import { StageModel, StageLayerModel } from '../app/StageModel';
+import { Type } from '@angular/compiler';
 
 export class Stage {
     x: number;
@@ -23,10 +24,12 @@ export class Stage {
     adjacentStagesRight: Stage[];
     adjacentStagesLeft: Stage[];
     adjacentStagesBottom: Stage[];
-    adjacentStagesTop: Stage[];
-  
+   
     // open borders that are adjacent to another stage's open borders
     openBorderCrossings: [number, number][] = [];
+
+    // ui
+    buttons: Button[] = [];
   
     // colors
     outlineColor: string = 'rgba(63, 191, 191, 0.25)';
@@ -40,6 +43,11 @@ export class Stage {
     borderCrossingColor: string = 'rgba(127, 191, 63, 1)'
     defaultBorderCrossingColor: string = 'rgba(127, 191, 63, 1)'
     highlightBorderCrossingColor: string = 'rgba(127, 191, 63, 1)'
+
+    buttonColor: string = 'rgba(225, 225, 225, 1)';
+
+    mainButtonColor: string = 'rgba(120, 225, 120, 1)';
+    notMainButtonColor: string = 'rgba(225, 120, 120, 1)';
    
     constructor(x: number, y: number, width: number, height: number, pixelSize: number, data: StageModel) {
       this.x = x / pixelSize;
@@ -48,7 +56,10 @@ export class Stage {
       this.height = height;
       this.stageModel = data;
       this.pixelSize = pixelSize;
-  
+      this.isMainStage = false;
+      let mainButton: MainButton = new MainButton(1.5, 1.5, 2, 1, this, true);
+      this.buttons.push(mainButton);
+
       if(data != undefined){
         this.name = data.filename;
         for(let layer of data.layers) {
@@ -148,6 +159,7 @@ export class Stage {
           && (y > this.y * this.pixelSize && y < this.y * this.pixelSize + this.height * this.pixelSize);
     }
   
+  
     // drag(newX: number, newY: number) {
     //   this.x = (newX - this.width * this.pixelSize * 0.5) / this.pixelSize;
     //   this.y = (newY - this.height * this.pixelSize * 0.5) / this.pixelSize;
@@ -180,6 +192,23 @@ export class Stage {
         }
       }
   
+      for(let button of this.buttons) {
+        if(!button.active) {
+            continue;
+        }
+        ctx.fillStyle = this.buttonColor;
+
+        if(button.type == 'main') {
+            if(this.isMainStage) {
+                ctx.fillStyle = this.mainButtonColor;
+            } else {
+                ctx.fillStyle = this.notMainButtonColor;
+            }            
+        }
+        ctx.fillRect(this.x * pixelSize + button.x * pixelSize - panX, 
+            this.y * pixelSize + button.y * pixelSize - panY, button.width * pixelSize, button.height * pixelSize);
+      }
+
       ctx.fillText(
         `${this.name} (${this.x}, ${this.y})`,
         this.x * pixelSize + this.width * this.pixelSize * 0.5 - panX,
@@ -188,4 +217,72 @@ export class Stage {
       );
       
     }
+
+    click(x: number, y: number, panX: number, panY: number) {
+        console.log(`stage clicked at: (${x},${y})`);
+        
+        for(let button of this.buttons) {
+            if(!button.active) {
+                continue;
+            }
+            if((x > button.x * this.pixelSize &&
+                 x < button.x * this.pixelSize + button.width * this.pixelSize) &&
+             (y > button.y * this.pixelSize &&
+                 y < button.y * this.pixelSize + button.height * this.pixelSize)){
+                // clicked button
+                
+                return new ButtonResponse(button, button.click());
+            }
+        }
+    }
   }
+
+
+interface Button {
+    parent: Stage;
+    active: boolean;
+
+    type: string; // cant check types in typescript ?
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+
+    click(): any;
+}
+
+// set stage to main stage
+export class MainButton implements Button {
+    parent: Stage;    
+    active: boolean;
+    type: string = 'main';
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+
+    constructor(x: number, y: number, width: number, height: number, parent: Stage, active: boolean) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height= height;
+        this.parent = parent;
+        this.active = active;
+    }
+    
+    click(): boolean {
+        this.parent.isMainStage = !this.parent.isMainStage;
+
+        return this.parent.isMainStage;
+    };
+}
+
+export class ButtonResponse {
+    button: Button;
+    response: any; 
+    
+    constructor(button: Button, response: any) {
+        this.button = button;
+        this.response = response;
+    }
+}
