@@ -5,7 +5,7 @@ import { Stage } from '../app/Stage';
 
 export class WorldGraph {
     // adjacencyMap: Map<string, StageInfo>;
-    adjacencyMap;
+    adjacencyMap: any; // generic object
 
     constructor() {
         // this.adjacencyMap = new Map<string, StageInfo>();
@@ -21,6 +21,7 @@ export class WorldGraph {
         if(this.adjacencyMap[source.name].adjacents[target.name]) {
             // edge already exists, you should be using modifyEdge
         }
+        
         tiles = tiles.map(([x, y]): [number, number] => {
             return [x, -y];            
         })
