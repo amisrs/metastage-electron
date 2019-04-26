@@ -1,5 +1,6 @@
 import { StageModel, StageLayerModel } from '../app/StageModel';
 import { Type } from '@angular/compiler';
+import { NONE_TYPE } from '@angular/compiler/src/output/output_ast';
 
 export class Stage {
     x: number;
@@ -129,8 +130,9 @@ export class Stage {
       for(let stage of this.adjacentStages) {
         let tiles: [number, number][] = [];
         for(let myTile of this.translatedOpenBorderTiles) {
-          if(this.compareTileAgainstOthers(myTile, stage.translatedOpenBorderTiles)) {
-            tiles.push(this.untranslateTile(myTile));
+          let otherTile: [number, number] = this.getAdjacentOtherTile(myTile, stage.translatedOpenBorderTiles)
+          if(otherTile) {
+            tiles.push(this.untranslateTile(otherTile));
             this.openBorderCrossings.push(this.untranslateTile(myTile));
           }        
         }
@@ -143,14 +145,14 @@ export class Stage {
     }
   
     // is this tile adjacent to another tile
-    compareTileAgainstOthers(myTile: [number, number], otherTiles: [number, number][]): boolean {
+    getAdjacentOtherTile(myTile: [number, number], otherTiles: [number, number][]): [number, number] {
       for(let otherTile of otherTiles) {
         if(((otherTile[0] == myTile[0] + 1 || otherTile[0] == myTile[0] - 1) && otherTile[1] == myTile[1]) ||
            ((otherTile[1] == myTile[1] + 1 || otherTile[1] == myTile[1] - 1) && otherTile[0] == myTile[0])) {
-          return true;
+          return otherTile;
         }
       }
-  
+      return null;  
     }
   
   
